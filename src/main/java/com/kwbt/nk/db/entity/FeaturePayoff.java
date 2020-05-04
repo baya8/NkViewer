@@ -1,4 +1,4 @@
-package com.kwbt.nk.common;
+package com.kwbt.nk.db.entity;
 
 import java.io.Serializable;
 
