@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kwbt.nk.scraiper.model.HorseModel;
+import com.kwbt.nk.viewer.model.ExpecationModel;
 import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
 
@@ -24,12 +25,14 @@ public class TableUtility {
 
     private final static Logger logger = LoggerFactory.getLogger(TableUtility.class);
 
-    private final static Integer leftHweight = 1;
-    private final static Integer leftDhweight = 2;
-    private final static Integer leftDsl = 3;
-    private final static Integer leftOdds = 4;
+    private final static Integer leftTableColumnNo = 0;
+    private final static Integer leftTableColumnHweight = 1;
+    private final static Integer leftTableColumnDhweight = 2;
+    private final static Integer leftTableColumnDsl = 3;
+    private final static Integer leftTableColumnOdds = 4;
 
-    private final static int rightStartCellValue = 0;
+    private final static int rightTableStartCellValue = 0;
+    private final static int expecationTableStartCellValue = 1;
 
     private final static DecimalFormat doubleFormat = new DecimalFormat("0.0");
 
@@ -40,10 +43,13 @@ public class TableUtility {
      * @return
      */
     public boolean isEmptyLeftTable(JTable table) {
-
-        return getLeftTableModelList(table)
-                .parallelStream()
-                .allMatch(e -> e.isEmpty());
+        boolean returnValue = true;
+        for (LeftTable l : conv2LeftTableModel(table)) {
+            if (!l.isEmpty()) {
+                return false;
+            }
+        }
+        return returnValue;
     }
 
     /**
@@ -52,20 +58,22 @@ public class TableUtility {
      * @param table
      * @return
      */
-    public List<LeftTable> getLeftTableModelList(JTable table) {
+    public List<LeftTable> conv2LeftTableModel(JTable table) {
 
         List<LeftTable> returnValue = new ArrayList<>();
 
         TableModel model = table.getModel();
         int row = 0;
-
-        while (isExistInput(model, row)) {
-
+        while (model.getValueAt(row, 1) != null
+                || model.getValueAt(row, 2) != null
+                || model.getValueAt(row, 3) != null
+                || model.getValueAt(row, 4) != null) {
             LeftTable l = new LeftTable();
-            l.setDhweight(Helper.toDouble(model.getValueAt(row, leftDhweight)));
-            l.setHweight(Helper.toDouble(model.getValueAt(row, leftHweight)));
-            l.setDsl(Helper.toInteger(model.getValueAt(row, leftDsl)));
-            l.setOdds(Helper.toDouble(model.getValueAt(row, leftOdds)));
+            l.setNo(object2Integer(model.getValueAt(row, leftTableColumnNo)));
+            l.setDhweight(object2Double(model.getValueAt(row, leftTableColumnDhweight)));
+            l.setHweight(object2Double(model.getValueAt(row, leftTableColumnHweight)));
+            l.setDsl(object2Integer(model.getValueAt(row, leftTableColumnDsl)));
+            l.setOdds(object2Double(model.getValueAt(row, leftTableColumnOdds)));
             returnValue.add(l);
             row++;
         }
@@ -73,19 +81,12 @@ public class TableUtility {
         return returnValue;
     }
 
-    /**
-     * テーブルの入力値が存在するかをチェック
-     *
-     * @param model
-     * @param row
-     * @return
-     */
-    private boolean isExistInput(TableModel model, int row) {
+    private Double object2Double(Object obj) {
+        return obj == null ? null : Double.valueOf(obj.toString());
+    }
 
-        return model.getValueAt(row, 1) != null
-                || model.getValueAt(row, 2) != null
-                || model.getValueAt(row, 3) != null
-                || model.getValueAt(row, 4) != null;
+    private Integer object2Integer(Object obj) {
+        return obj == null ? null : Integer.valueOf(obj.toString());
     }
 
     /**
@@ -99,25 +100,54 @@ public class TableUtility {
         TableModel model = rightTable.getModel();
         for (int i = 0; i < outputModelList.size(); i++) {
 
-            AtomicInteger index = new AtomicInteger(rightStartCellValue);
+            AtomicInteger index = new AtomicInteger(rightTableStartCellValue);
 
             RightTable outputModel = outputModelList.get(i);
-            model.setValueAt(toDouble(outputModel.getKaisyu()), i, index.getAndIncrement());
-            model.setValueAt(toDouble(outputModel.getWinper()), i, index.getAndIncrement());
-            model.setValueAt(toDouble(outputModel.getCountSum()), i, index.getAndIncrement());
-            model.setValueAt(toDouble(outputModel.getBoughtBakenNum()), i, index.getAndIncrement());
-            model.setValueAt(toDouble(outputModel.getPayoffAvg()), i, index.get());
+            model.setValueAt(formatDoubleValue(outputModel.getKaisyu()), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(outputModel.getWinper()), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(outputModel.getCountSum()), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(outputModel.getBoughtBakenNum()), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(outputModel.getPayoffAvg()), i, index.get());
         }
     }
 
-    private Object toDouble(Object obj) {
+    /**
+     * 期待値テーブルの値を設定する
+     *
+     * @param expectationTable
+     * @param expectationList
+     */
+    public void setValueToExpectationTable(JTable expectationTable, List<ExpecationModel> expectationList) {
+
+        TableModel model = expectationTable.getModel();
+
+        for (int i = 0; i < expectationList.size(); i++) {
+
+            AtomicInteger index = new AtomicInteger(expecationTableStartCellValue);
+
+            ExpecationModel expecationEntity = expectationList.get(i);
+            model.setValueAt(expecationEntity.getNo(), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(expecationEntity.getWinper()), i, index.getAndIncrement());
+            model.setValueAt(formatDoubleValue(expecationEntity.getExpectation()), i, index.get());
+        }
+    }
+
+    /**
+     * 指定の値を、double表記へ変換することを試みる
+     *
+     * @param obj
+     * @return
+     */
+    private Object formatDoubleValue(Object obj) {
+
+        logger.info(" try format {}", obj);
 
         if (obj == null) {
             return null;
         }
 
         if (!(obj instanceof Double)) {
-            return null;
+            return obj;
         }
 
         Double obj_d = (Double) obj;
@@ -125,6 +155,7 @@ public class TableUtility {
             return null;
         }
 
+        logger.debug("format to double {}", obj);
         return Double.valueOf(doubleFormat.format(obj));
     }
 
@@ -140,10 +171,8 @@ public class TableUtility {
         int colMax = table.getModel().getColumnCount();
 
         for (int r = 0; r < rowMax; r++) {
-            for (int c = 0; c < colMax; c++) {
-                if (table.getModel().isCellEditable(r, c)) {
-                    table.getModel().setValueAt(null, r, c);
-                }
+            for (int c = 1; c < colMax; c++) {
+                table.getModel().setValueAt(null, r, c);
             }
         }
     }
@@ -196,10 +225,10 @@ public class TableUtility {
 
         for (int i = 0; i < houseList.size(); i++) {
             HorseModel e = houseList.get(i);
-            model.setValueAt(e.getHweight(), i, leftHweight);
-            model.setValueAt(e.getDhweight(), i, leftDhweight);
-            model.setValueAt(e.getDsl(), i, leftDsl);
-            model.setValueAt(e.getOdds(), i, leftOdds);
+            model.setValueAt(e.getHweight(), i, leftTableColumnHweight);
+            model.setValueAt(e.getDhweight(), i, leftTableColumnDhweight);
+            model.setValueAt(e.getDsl(), i, leftTableColumnDsl);
+            model.setValueAt(e.getOdds(), i, leftTableColumnOdds);
         }
     }
 }

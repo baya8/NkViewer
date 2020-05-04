@@ -20,6 +20,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
@@ -34,9 +35,11 @@ import com.kwbt.nk.scraiper.constant.ScraiperConst;
 import com.kwbt.nk.scraiper.page.CollectJRARaceInfoPage;
 import com.kwbt.nk.scraiper.util.ScraipingRaceFromJRA;
 import com.kwbt.nk.viewer.constant.Const;
+import com.kwbt.nk.viewer.core.Calculation;
+import com.kwbt.nk.viewer.core.ExpectationLogic;
 import com.kwbt.nk.viewer.model.CalcModel;
+import com.kwbt.nk.viewer.model.ExpecationModel;
 import com.kwbt.nk.viewer.model.RightTable;
-import com.kwbt.nk.viewer.util.Calculation;
 import com.kwbt.nk.viewer.util.DataSourceReader;
 import com.kwbt.nk.viewer.util.GetSheetData;
 import com.kwbt.nk.viewer.util.JComboBoxUtility;
@@ -46,16 +49,29 @@ import com.kwbt.nk.viewer.util.TableUtility;
 
 public class MainPage extends JFrame {
 
+    /** ロガー */
     private final static Logger logger = LoggerFactory.getLogger(MainPage.class);
+
+    /** テーブルに値を書き込んだりするツール */
     private final static TableUtility tableUtility = new TableUtility();
+
+    /** コンボボックスをなんやかんやするためのツール */
     private final static JComboBoxUtility jComboBoxUtility = new JComboBoxUtility();
+
+    /** スクレイピング結果を画面に設定するツール */
     private final static ScraipingSetter scraipSetter = new ScraipingSetter();
+
+    /** 各種計算ツール */
     private final Calculation calcInstance = new Calculation();
+
+    private final ExpectationLogic expectationLogic = new ExpectationLogic();
 
     /**
      * 画面コンポーネント
      */
     private JPanel contentPane;
+
+    // メニュー
     private JMenuBar menuBar = new JMenuBar();
     private JMenu menuFile = new JMenu("ファイル");
     private JMenuItem menuItemFileExit = new JMenuItem("終了");
@@ -63,25 +79,41 @@ public class MainPage extends JFrame {
     private JMenuItem menuItemKinoJRA = new JMenuItem("レースヘルプ(JRA)");
     private JMenu menuHelp = new JMenu("ヘルプ");;
     private JMenuItem menuItemHelpInfo = new JMenuItem("情報");
+
+    // テーブル用スクロールパネル
     private final JScrollPane scrollPaneLeft = new JScrollPane();
     private final JScrollPane scrollPaneRight = new JScrollPane();
     private final JScrollPane scrollPaneKakudo = new JScrollPane();
-    private final JTable tableLeft = new JTable();
-    private final JTable tableRight = new JTable();
-    private final JTable tableKakudo = new JTable();
+
+    // テーブル
+    private final JTable tableWhere = new JTable();
+    private final JTable tableResult = new JTable();
+    private final JTable tableExpecation = new JTable();
+
     private final JFormattedTextField textFieldDistance = new JFormattedTextField(new DecimalFormat("####"));
+
+    // コンボボックス
     private final JComboBox<String> comboBoxSurface = new JComboBox<>();
     private final JComboBox<String> comboBoxWeather = new JComboBox<>();
     private final JComboBox<String> comboBoxCourse = new JComboBox<>();
+
+    // 押しボタン
     private final JButton btnClearTableLeft = new JButton("clear");
     private final JButton btnClearTableRight = new JButton("clear");
-    private final JButton btnAnalyze = new JButton("analyze");
+    private final JButton btnAnalyze = new JButton("Calcuration");
+    private final JButton btnGetRaceInfo = new JButton("GetRace");
+
+    // ラベル
     private final JLabel labelSurface = new JLabel("地面");
     private final JLabel labelWeather = new JLabel("天気");
     private final JLabel labelCourse = new JLabel("コース");
     private final JLabel labelDistance = new JLabel("距離");
     private final JLabel labelRaceTitle = new JLabel("");
     private final JLabel labelRace = new JLabel("レース情報");
+    private final JLabel labelInfoTable1 = new JLabel("条件入力");
+    private final JLabel labelInfoTable2 = new JLabel("結果表示");
+    private final JLabel labelInfoTable3 = new JLabel("期待値");
+    private JProgressBar progressBar;
 
     /**
      * Launch the application.
@@ -95,6 +127,8 @@ public class MainPage extends JFrame {
 
                     MainPage frame = new MainPage();
                     frame.setVisible(true);
+
+                    logger.info("hello application");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -113,7 +147,7 @@ public class MainPage extends JFrame {
         textFieldDistance.setColumns(10);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 1033, 682);
+        setBounds(100, 100, 1231, 721);
 
         setJMenuBar(menuBar);
         menuBar.add(menuFile);
@@ -128,39 +162,39 @@ public class MainPage extends JFrame {
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
-        scrollPaneLeft.setBounds(12, 149, 364, 426);
+        scrollPaneLeft.setBounds(12, 194, 364, 426);
 
         contentPane.add(scrollPaneLeft);
-        tableLeft.setModel(new DefaultTableModel(
+        tableWhere.setModel(new DefaultTableModel(
                 new Object[][] {
-                        { Integer.valueOf(1), null, null, null, null },
-                        { Integer.valueOf(2), null, null, null, null },
-                        { Integer.valueOf(3), null, null, null, null },
-                        { Integer.valueOf(4), null, null, null, null },
-                        { Integer.valueOf(5), null, null, null, null },
-                        { Integer.valueOf(6), null, null, null, null },
-                        { Integer.valueOf(7), null, null, null, null },
-                        { Integer.valueOf(8), null, null, null, null },
-                        { Integer.valueOf(9), null, null, null, null },
-                        { Integer.valueOf(10), null, null, null, null },
-                        { Integer.valueOf(11), null, null, null, null },
-                        { Integer.valueOf(12), null, null, null, null },
-                        { Integer.valueOf(13), null, null, null, null },
-                        { Integer.valueOf(14), null, null, null, null },
-                        { Integer.valueOf(15), null, null, null, null },
-                        { Integer.valueOf(16), null, null, null, null },
-                        { Integer.valueOf(17), null, null, null, null },
-                        { Integer.valueOf(18), null, null, null, null },
-                        { Integer.valueOf(19), null, null, null, null },
-                        { Integer.valueOf(20), null, null, null, null },
-                        { Integer.valueOf(21), null, null, null, null },
-                        { Integer.valueOf(22), null, null, null, null },
-                        { Integer.valueOf(23), null, null, null, null },
-                        { Integer.valueOf(24), null, null, null, null },
-                        { Integer.valueOf(25), null, null, null, null },
+                        { new Integer(1), null, null, null, null },
+                        { new Integer(2), null, null, null, null },
+                        { new Integer(3), null, null, null, null },
+                        { new Integer(4), null, null, null, null },
+                        { new Integer(5), null, null, null, null },
+                        { new Integer(6), null, null, null, null },
+                        { new Integer(7), null, null, null, null },
+                        { new Integer(8), null, null, null, null },
+                        { new Integer(9), null, null, null, null },
+                        { new Integer(10), null, null, null, null },
+                        { new Integer(11), null, null, null, null },
+                        { new Integer(12), null, null, null, null },
+                        { new Integer(13), null, null, null, null },
+                        { new Integer(14), null, null, null, null },
+                        { new Integer(15), null, null, null, null },
+                        { new Integer(16), null, null, null, null },
+                        { new Integer(17), null, null, null, null },
+                        { new Integer(18), null, null, null, null },
+                        { new Integer(19), null, null, null, null },
+                        { new Integer(20), null, null, null, null },
+                        { new Integer(21), null, null, null, null },
+                        { new Integer(22), null, null, null, null },
+                        { new Integer(23), null, null, null, null },
+                        { new Integer(24), null, null, null, null },
+                        { new Integer(25), null, null, null, null },
                 },
                 new String[] {
-                        "No", "weight", "dhweight", "dsl", "odds"
+                        "\u99ACNo", "weight", "dhweight", "dsl", "odds"
                 }) {
             Class[] columnTypes = new Class[] {
                     Integer.class, Double.class, Double.class, Integer.class, Double.class
@@ -178,9 +212,9 @@ public class MainPage extends JFrame {
                 return columnEditables[column];
             }
         });
-        tableLeft.getColumnModel().getColumn(0).setPreferredWidth(41);
+        tableWhere.getColumnModel().getColumn(0).setPreferredWidth(41);
 
-        scrollPaneLeft.setViewportView(tableLeft);
+        scrollPaneLeft.setViewportView(tableWhere);
         comboBoxSurface.setModel(new DefaultComboBoxModel<>(Const.surfaceArray));
         comboBoxSurface.setBounds(12, 39, 100, 20);
 
@@ -202,12 +236,12 @@ public class MainPage extends JFrame {
         contentPane.add(labelCourse);
         labelDistance.setBounds(348, 15, 50, 13);
         contentPane.add(labelDistance);
-        btnClearTableLeft.setBounds(283, 585, 91, 21);
+        btnClearTableLeft.setBounds(285, 630, 91, 21);
         contentPane.add(btnClearTableLeft);
-        scrollPaneRight.setBounds(390, 149, 407, 426);
+        scrollPaneRight.setBounds(390, 194, 407, 426);
 
         contentPane.add(scrollPaneRight);
-        tableRight.setModel(new DefaultTableModel(
+        tableResult.setModel(new DefaultTableModel(
                 new Object[][] {
                         { null, null, null, null, null },
                         { null, null, null, null, null },
@@ -236,7 +270,7 @@ public class MainPage extends JFrame {
                         { null, null, null, null, null },
                 },
                 new String[] {
-                        "回収率(avg)", "勝率(%)", "カウント(count)", "購入数(sum)", "ペイオフ(avg)"
+                        "\u56DE\u53CE\u7387(avg)", "\u52DD\u7387(%)", "\u30AB\u30A6\u30F3\u30C8(count)", "\u8CFC\u5165\u6570(sum)", "\u30DA\u30A4\u30AA\u30D5"
                 }) {
             boolean[] columnEditables = new boolean[] {
                     false, false, false, false, false
@@ -247,54 +281,57 @@ public class MainPage extends JFrame {
             }
         });
 
-        scrollPaneRight.setViewportView(tableRight);
-        btnClearTableRight.setBounds(706, 585, 91, 21);
+        scrollPaneRight.setViewportView(tableResult);
+        btnClearTableRight.setBounds(706, 630, 91, 21);
         contentPane.add(btnClearTableRight);
         btnAnalyze.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
-        btnAnalyze.setBounds(470, 11, 117, 48);
+        btnAnalyze.setBounds(587, 11, 139, 48);
         contentPane.add(btnAnalyze);
         labelRaceTitle.setBounds(12, 91, 364, 48);
+        btnGetRaceInfo.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
+        btnGetRaceInfo.setBounds(460, 11, 117, 48);
+        contentPane.add(btnGetRaceInfo);
 
         contentPane.add(labelRaceTitle);
         labelRace.setBounds(12, 69, 71, 13);
 
         contentPane.add(labelRace);
-        scrollPaneKakudo.setBounds(809, 149, 192, 426);
+        scrollPaneKakudo.setBounds(813, 194, 274, 426);
 
         contentPane.add(scrollPaneKakudo);
-        tableKakudo.setModel(new DefaultTableModel(
+        tableExpecation.setModel(new DefaultTableModel(
                 new Object[][] {
-                        { Integer.valueOf(1), null },
-                        { Integer.valueOf(2), null },
-                        { Integer.valueOf(3), null },
-                        { Integer.valueOf(4), null },
-                        { Integer.valueOf(5), null },
-                        { Integer.valueOf(6), null },
-                        { Integer.valueOf(7), null },
-                        { Integer.valueOf(8), null },
-                        { Integer.valueOf(9), null },
-                        { Integer.valueOf(10), null },
-                        { Integer.valueOf(11), null },
-                        { Integer.valueOf(12), null },
-                        { Integer.valueOf(13), null },
-                        { Integer.valueOf(14), null },
-                        { Integer.valueOf(15), null },
-                        { Integer.valueOf(16), null },
-                        { Integer.valueOf(17), null },
-                        { Integer.valueOf(18), null },
-                        { Integer.valueOf(19), null },
-                        { Integer.valueOf(20), null },
-                        { Integer.valueOf(21), null },
-                        { Integer.valueOf(22), null },
-                        { Integer.valueOf(23), null },
-                        { Integer.valueOf(24), null },
-                        { Integer.valueOf(25), null },
+                        { new Integer(1), null, null, null },
+                        { new Integer(2), null, null, null },
+                        { new Integer(3), null, null, null },
+                        { new Integer(4), null, null, null },
+                        { new Integer(5), null, null, null },
+                        { new Integer(6), null, null, null },
+                        { new Integer(7), null, null, null },
+                        { new Integer(8), null, null, null },
+                        { new Integer(9), null, null, null },
+                        { new Integer(10), null, null, null },
+                        { new Integer(11), null, null, null },
+                        { new Integer(12), null, null, null },
+                        { new Integer(13), null, null, null },
+                        { new Integer(14), null, null, null },
+                        { new Integer(15), null, null, null },
+                        { new Integer(16), null, null, null },
+                        { new Integer(17), null, null, null },
+                        { new Integer(18), null, null, null },
+                        { new Integer(19), null, null, null },
+                        { new Integer(20), null, null, null },
+                        { new Integer(21), null, null, null },
+                        { new Integer(22), null, null, null },
+                        { new Integer(23), null, null, null },
+                        { new Integer(24), null, null, null },
+                        { new Integer(25), null, null, null },
                 },
                 new String[] {
-                        "購入数", "回収率"
+                        "\u8CFC\u5165\u6570", "\u99ACNo", "\u52DD\u7387", "\u671F\u5F85\u5024"
                 }) {
             Class[] columnTypes = new Class[] {
-                    Integer.class, Object.class
+                    Integer.class, Integer.class, Object.class, Object.class
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -302,26 +339,42 @@ public class MainPage extends JFrame {
             }
 
             boolean[] columnEditables = new boolean[] {
-                    false, true
+                    false, false, false, false
             };
 
             public boolean isCellEditable(int row, int column) {
                 return columnEditables[column];
             }
         });
-        tableKakudo.getColumnModel().getColumn(0).setPreferredWidth(56);
-        tableKakudo.getColumnModel().getColumn(1).setPreferredWidth(108);
+        tableExpecation.getColumnModel().getColumn(0).setPreferredWidth(40);
+        tableExpecation.getColumnModel().getColumn(1).setPreferredWidth(50);
+        tableExpecation.getColumnModel().getColumn(3).setPreferredWidth(100);
 
-        scrollPaneKakudo.setViewportView(tableKakudo);
+        scrollPaneKakudo.setViewportView(tableExpecation);
+
+        labelInfoTable1.setBounds(12, 171, 50, 13);
+        contentPane.add(labelInfoTable1);
+
+        labelInfoTable2.setBounds(390, 171, 50, 13);
+        contentPane.add(labelInfoTable2);
+
+        labelInfoTable3.setBounds(813, 171, 50, 13);
+        contentPane.add(labelInfoTable3);
+
+        progressBar = new JProgressBar();
+        progressBar.setBounds(1057, 15, 146, 14);
+        contentPane.add(progressBar);
 
         setTitle("NkViewer");
 
         // JTableのセルが編集中の状態でもコミットする
         // https://ateraimemo.com/Swing/TerminateEdit.html
-        tableLeft.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+        tableWhere.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
+        // コンポーネントにハンドラーを登録する
         listenerHandle();
 
+        // 起動時の各チェック
         initCheck();
     }
 
@@ -354,56 +407,42 @@ public class MainPage extends JFrame {
 
         // [メニュー] - [ヘルプ] - [情報]
         menuItemHelpInfo.addActionListener(new ActionListener() {
+
             public void actionPerformed(ActionEvent e) {
-                MessageBuilder msgBuilder = new MessageBuilder();
-                msgBuilder.addLine("NetKeiba Viewer");
-                msgBuilder.addLine("version: 3.0.2");
-                msgBuilder.addLine("copy right: kawabata 2019");
-                msgBuilder.addLine(String.format("データソースの読込状況：%s",
-                        Const.dataSheetMap.isEmpty()
-                                ? "NG"
-                                : "OK"));
-                msgBuilder.showMessage(contentPane, "情報", JOptionPane.INFORMATION_MESSAGE);
+
+                String label = Const.dataSheetMap.isEmpty()
+                        ? "NG"
+                        : "OK";
+
+                String dbStatus = String.format("データソースの読込状況：%s", label);
+
+                new MessageBuilder()
+                        .addLine("NetKeiba Viewer")
+                        .addLine("version: 3.0.2")
+                        .addLine("copy right: kawabata 2019")
+                        .addLine(dbStatus)
+                        .showMessage(contentPane, "情報", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
-        // JRAスクレイピング入力画面
-        menuItemKinoJRA.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                CollectJRARaceInfoPage popup = scraipSetter.showDialog(contentPane);
-                if (popup.getModel().getCloseAction() == ScraiperConst.Closeby.ok) {
+        // (メニュー)JRAスクレイピング入力画面
+        menuItemKinoJRA.addActionListener(
+                getScrapingListener());
 
-                    ProgessBar bar1 = new ProgessBar(contentPane) {
-
-                        @Override
-                        public void registMethod() {
-                            scraipSetter.setScraipingResult(
-                                    popup.getModel(),
-                                    contentPane,
-                                    comboBoxCourse,
-                                    comboBoxSurface,
-                                    comboBoxWeather,
-                                    textFieldDistance,
-                                    tableLeft,
-                                    labelRaceTitle);
-                        }
-                    };
-                    bar1.start();
-                }
-            }
-        });
+        btnGetRaceInfo.addActionListener(
+                getScrapingListener());
 
         // 左テーブルクリアボタン
         btnClearTableLeft.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                tableUtility.clearLeftTable(tableLeft);
+                tableUtility.clearLeftTable(tableWhere);
             }
         });
 
         // 右テーブルクリアボタン
         btnClearTableRight.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                tableUtility.clearRightTable(tableRight);
+                tableUtility.clearRightTable(tableResult);
             }
         });
 
@@ -415,10 +454,10 @@ public class MainPage extends JFrame {
         });
 
         // DELETEキー押下でセルの値を削除
-        tableLeft.addKeyListener(new KeyAdapter() {
+        tableWhere.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                tableUtility.deleteCellValue(tableLeft);
+                tableUtility.deleteCellValue(tableWhere);
             }
         });
     }
@@ -428,7 +467,7 @@ public class MainPage extends JFrame {
      */
     private void startCalc() {
 
-        if (inputValidation()) {
+        if (inputValidationIsOk()) {
 
             // 入力値をモデルへセット
             CalcModel model = new CalcModel();
@@ -436,11 +475,26 @@ public class MainPage extends JFrame {
             model.setSelectedCourse(comboBoxCourse.getSelectedIndex());
             model.setSelectedSurface(comboBoxSurface.getSelectedIndex());
             model.setSelectedWeather(comboBoxWeather.getSelectedIndex());
-            model.setTableList(tableUtility.getLeftTableModelList(tableLeft));
+            model.setTableList(tableUtility.conv2LeftTableModel(tableWhere));
 
-            // 右テーブルを計算
-            List<RightTable> resultList = calcInstance.calcRightTable(model);
-            tableUtility.setValueToRightTable(tableRight, resultList);
+            try {
+
+                // 右テーブルを計算
+                List<RightTable> resultList = calcInstance.calcRightTable(model);
+                tableUtility.setValueToRightTable(tableResult, resultList);
+
+                // 期待値テーブル処理
+                List<ExpecationModel> expectationList = expectationLogic.getKitaichiList(resultList);
+                tableUtility.setValueToExpectationTable(tableExpecation, expectationList);
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+                logger.error("", e.fillInStackTrace());
+                JOptionPane.showMessageDialog(this, "計算が異常終了しました。", "ERROR", JOptionPane.ERROR_MESSAGE);
+
+            }
+
         }
     }
 
@@ -449,7 +503,7 @@ public class MainPage extends JFrame {
      *
      * @return true or false
      */
-    private boolean inputValidation() {
+    private boolean inputValidationIsOk() {
 
         MessageBuilder msgBuilder = new MessageBuilder();
 
@@ -475,7 +529,7 @@ public class MainPage extends JFrame {
             msgBuilder.addLine("天気が未選択です。");
         }
 
-        if (tableUtility.isEmptyLeftTable(tableLeft)) {
+        if (tableUtility.isEmptyLeftTable(tableWhere)) {
             msgBuilder.addLine("左テーブルに値が何も入力されていません。");
         }
 
@@ -494,5 +548,49 @@ public class MainPage extends JFrame {
     public void exit() {
         ScraipingRaceFromJRA.close();
         System.exit(0);
+    }
+
+    /**
+     * スクレイピング画面を開くイベントを返す。
+     *
+     * @return
+     */
+    private ActionListener getScrapingListener() {
+        return new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                // 取得レースの選択画面を表示
+                CollectJRARaceInfoPage popup = scraipSetter.showDialog(contentPane);
+
+                // OKが押された場合だけ処理する
+                if (popup.getModel().getCloseAction() == ScraiperConst.Closeby.ok) {
+
+                    tableUtility.clearLeftTable(tableWhere);
+                    tableUtility.clearRightTable(tableResult);
+
+                    progressBar.setIndeterminate(true);
+
+                    Thread t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            scraipSetter.setScraipingResult(
+                                    popup.getModel(),
+                                    contentPane,
+                                    comboBoxCourse,
+                                    comboBoxSurface,
+                                    comboBoxWeather,
+                                    textFieldDistance,
+                                    tableWhere,
+                                    labelRaceTitle);
+
+                            progressBar.setIndeterminate(false);
+                        }
+                    });
+
+                    t.start();
+                }
+            }
+        };
     }
 }

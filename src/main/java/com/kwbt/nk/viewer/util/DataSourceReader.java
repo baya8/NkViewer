@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kwbt.nk.analyzer.step.model.JsonData;
+import com.kwbt.nk.common.JsonData;
 
 /**
  * データファイルをJSONで読み込むクラス
@@ -32,8 +32,7 @@ public class DataSourceReader {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
-            Map<Integer, List<JsonData>> datasource = mapper.readValue(
-                    br.readLine(),
+            Map<Integer, List<JsonData>> datasource = mapper.readValue(br.readLine(),
                     new TypeReference<Map<Integer, List<JsonData>>>() {
                     });
 

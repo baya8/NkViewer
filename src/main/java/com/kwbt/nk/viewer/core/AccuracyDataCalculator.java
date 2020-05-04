@@ -1,4 +1,4 @@
-package com.kwbt.nk.viewer.util;
+package com.kwbt.nk.viewer.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,11 +9,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kwbt.nk.analyzer.step.model.JsonData;
+import com.kwbt.nk.common.JsonData;
 import com.kwbt.nk.viewer.model.CalcModel;
 import com.kwbt.nk.viewer.model.KakudoTable;
 import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
+import com.kwbt.nk.viewer.util.GetSheetData;
 
 /**
  * シミュレーション確度検証機能ロジック<br>

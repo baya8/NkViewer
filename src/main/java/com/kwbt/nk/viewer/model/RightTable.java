@@ -12,6 +12,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  */
 public class RightTable {
 
+    private Integer no;
     private Double kaisyu;
     private Double winper;
     private Integer countSum;
@@ -21,20 +22,29 @@ public class RightTable {
     public RightTable() {
     }
 
-    /**
-     *
-     * @param kaisyu 回収率
-     * @param winper 勝率
-     * @param countSum ヒット数
-     * @param boughtBakenNum 購入件総数
-     * @param payoffSumAvg ペイオフ平均値
-     */
     public RightTable(Double kaisyu, Double winper, Integer countSum, Integer boughtBakenNum, Double payoffSumAvg) {
         this.kaisyu = kaisyu;
         this.winper = winper;
         this.countSum = countSum;
         this.boughtBakenNum = boughtBakenNum;
         this.payoffSumAvg = payoffSumAvg;
+    }
+
+    public RightTable(Integer no, Double kaisyu, Double winper, Integer countSum, Integer boughtBakenNum, Double payoffSumAvg) {
+        this.no = no;
+        this.kaisyu = kaisyu;
+        this.winper = winper;
+        this.countSum = countSum;
+        this.boughtBakenNum = boughtBakenNum;
+        this.payoffSumAvg = payoffSumAvg;
+    }
+
+    public Integer getNo() {
+        return no;
+    }
+
+    public void setNo(Integer no) {
+        this.no = no;
     }
 
     public Double getKaisyu() {
