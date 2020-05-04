@@ -1,7 +1,5 @@
 package com.kwbt.nk.viewer.util;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,155 +23,111 @@ import com.kwbt.nk.viewer.model.RightTable;
  */
 public class Calculation {
 
-	private final static Logger logger = LoggerFactory.getLogger(Calculation.class);
+    private final static Logger logger = LoggerFactory.getLogger(Calculation.class);
 
-	private final GetSheetData getSheetData = new GetSheetData();
+    private final GetSheetData getSheetData = new GetSheetData();
 
-	/**
-	 * 左テーブルの入力値から、右テーブルの値を算出
-	 *
-	 * @param model
-	 * @return
-	 */
-	public List<RightTable> calcRightTable(CalcModel model) {
+    /**
+     * 左テーブルの入力値から、右テーブルの値を算出
+     *
+     * @param model
+     * @return
+     */
+    public List<RightTable> calcRightTable(CalcModel model) {
 
-		final List<LeftTable> leftTableList = model.getTableList();
+        final List<LeftTable> leftTableList = model.getTableList();
 
-		final List<RightTable> returnValue = new ArrayList<>(leftTableList.size());
+        final List<RightTable> returnValue = new ArrayList<>(leftTableList.size());
 
-		final List<JsonData> dataSheet = getSheetData.getSheetPack(model.getInputedDistance());
+        // データシートのラベルはレース距離値
+        final List<JsonData> dataSheet = getSheetData.getSheetPack(model.getInputedDistance());
 
-		final List<Result> resultList = dataSheet.parallelStream().map(e -> e.getResultModel()).collect(Collectors.toList());
+        final List<Result> resultList = dataSheet
+                .parallelStream()
+                .map(e -> e.getResultModel())
+                .collect(Collectors.toList());
 
-		leftTableList.forEach(l -> {
-			logger.info(l.toString());
-			List<Result> filteredResultList = filterResultList(resultList, l, model);
-			RightTable rightTable = calcValue(filteredResultList);
-			returnValue.add(rightTable);
-		});
+        leftTableList.forEach(l -> {
+            logger.info(l.toString());
+            List<Result> filteredResultList = filter(resultList, l, model);
+            RightTable rightTable = calculation(filteredResultList);
+            returnValue.add(rightTable);
+        });
 
-		return returnValue;
-	}
+        return returnValue;
+    }
 
-	private List<Result> filterResultList(List<Result> resultList, LeftTable l, CalcModel model) {
+    private List<Result> filter(List<Result> resultList, LeftTable l, CalcModel model) {
 
-		final List<Result> matchedList = new ArrayList<>(resultList.size());
-		final List<Result> subList = new ArrayList<>(resultList.size());
+        return resultList
+                .parallelStream()
 
-		// 左上の入力値でフィルター
-		resultList.forEach(r -> {
-			String courseStr = MatcherConst.courseMap.get(r.course);
-			String surfaceStr = MatcherConst.surfaceMap.get(r.surface);
-			String weatherStr = MatcherConst.weatherMap.get(r.weather);
+                // 左上の入力値でフィルター
+                .filter(e -> {
 
-			if (courseStr.equals(Const.courseArray[model.getSelectedCourse()])
-					&& surfaceStr.equals(Const.surfaceArray[model.getSelectedSurface()])
-					&& weatherStr.equals(Const.weatherArray[model.getSelectedWeather()])) {
+                    String courseStr = MatcherConst.courseMap.get(e.course);
+                    String surfaceStr = MatcherConst.surfaceMap.get(e.surface);
+                    String weatherStr = MatcherConst.weatherMap.get(e.weather);
 
-				matchedList.add(r);
-			}
-		});
+                    return courseStr.equals(Const.courseArray[model.getSelectedCourse()])
+                            && surfaceStr.equals(Const.surfaceArray[model.getSelectedSurface()])
+                            && weatherStr.equals(Const.weatherArray[model.getSelectedWeather()]);
+                })
+                .filter(e -> {
+                    Range<Double> hweightRange = MatcherConst.hweightMap.get(e.hweight);
+                    return Helper.contain(hweightRange, l.getHweight());
+                })
+                .filter(e -> {
+                    Range<Double> dhweightRange = MatcherConst.dhweightMap.get(e.dhweight);
+                    return Helper.contain(dhweightRange, l.getDhweight());
+                })
+                .filter(e -> {
+                    Range<Double> dslRange = MatcherConst.dslMap.get(e.dsl);
+                    return Helper.contain(dslRange, l.getDsl());
+                })
+                .filter(e -> {
+                    Range<Double> oddsRange = MatcherConst.oddsMap.get(e.odds);
+                    return Helper.contain(oddsRange, l.getOdds());
+                })
+                .collect(Collectors.toList());
+    }
 
-		if (matchedList.isEmpty()) {
-			return matchedList;
-		}
+    private RightTable calculation(List<Result> filteredResultList) {
 
-		logger.debug(String.format("filter left top conf - size: %d", matchedList.size()));
+        Double kaisyuu = filteredResultList
+                .parallelStream()
+                .mapToDouble(e -> e.kaisyu)
+                .sum();
 
-		// weightでフィルター
-		if (l.getHweight() != null) {
-			matchedList.forEach(r -> {
-				Range<Double> hweightRange = MatcherConst.hweightMap.get(r.hweight);
-				if (rangeContain(hweightRange, l.getHweight())) {
-					subList.add(r);
-				}
-			});
-			pass(subList, matchedList);
-		}
-		logger.debug(String.format("filter weight - size: %d", matchedList.size()));
+        Integer countSum = filteredResultList
+                .parallelStream()
+                .mapToInt(e -> e.count)
+                .sum();
 
-		// dhweightでフィルター
-		if (l.getDhweight() != null) {
-			matchedList.forEach(r -> {
-				Range<Double> dhweightRange = MatcherConst.dhweightMap.get(r.dhweight);
-				if (rangeContain(dhweightRange, l.getDhweight())) {
-					subList.add(r);
-				}
-			});
-			pass(subList, matchedList);
-		}
-		logger.debug(String.format("filter dhweight - size: %d", matchedList.size()));
+        Integer bakenNum = filteredResultList
+                .parallelStream()
+                .mapToInt(e -> e.bakenAllNum)
+                .sum();
 
-		// dslでフィルター
-		if (l.getDsl() != null) {
-			matchedList.forEach(r -> {
-				Range<Double> dslRange = MatcherConst.dslMap.get(r.dsl);
-				if (rangeContain(dslRange, l.getDsl())) {
-					subList.add(r);
-				}
-			});
-			pass(subList, matchedList);
-		}
-		logger.debug(String.format("filter dsl - size: %d", matchedList.size()));
+        Double payoff = filteredResultList
+                .parallelStream()
+                .mapToDouble(e -> e.payoffSum)
+                .sum();
 
-		// oddsでフィルター
-		if (l.getOdds() != null) {
-			matchedList.forEach(r -> {
-				Range<Double> oddsRange = MatcherConst.oddsMap.get(r.odds);
-				if (rangeContain(oddsRange, l.getOdds())) {
-					subList.add(r);
-				}
-			});
-			pass(subList, matchedList);
-		}
-		logger.debug(String.format("filter odds - size: %d", matchedList.size()));
+        // マッチした件数が0件でない場合のみ計算を実施
+        if (!filteredResultList.isEmpty()) {
 
-		return matchedList;
-	}
+            // 循環小数による例外を回避
+            kaisyuu = kaisyuu / filteredResultList.size();
+            payoff = payoff / filteredResultList.size();
+        }
 
-	private boolean rangeContain(Range<Double> r, Double value) {
-		return (r == null && value == null) || (r != null && value != null && r.isContain(value));
-	}
+        return new RightTable(
+                kaisyuu,
+                (countSum * 1.0 / bakenNum * 100.0),
+                countSum,
+                bakenNum,
+                payoff);
 
-	private boolean rangeContain(Range<Double> r, Integer value) {
-		return (r == null && value == null) || (r != null && value != null && r.isContain(Double.valueOf(value)));
-	}
-
-	private void pass(List<Result> from, List<Result> to) {
-		to.clear();
-		to.addAll(from);
-		from.clear();
-	}
-
-	private RightTable calcValue(List<Result> filteredResultList) {
-
-		BigDecimal kaisyu = new BigDecimal(0);
-		Integer countSum = Integer.valueOf(0);
-		Integer boughtBakenNum = Integer.valueOf(0);
-		BigDecimal payyoffAvg = new BigDecimal(0);
-
-		for (Result r : filteredResultList) {
-			kaisyu = kaisyu.add(new BigDecimal(r.kaisyu));
-			countSum += r.count;
-			boughtBakenNum += r.bakenAllNum;
-			payyoffAvg = payyoffAvg.add(new BigDecimal(r.payoffSum));
-		}
-
-		// マッチした件数が0件でない場合のみ計算を実施
-		if (!filteredResultList.isEmpty()) {
-			BigDecimal bunbo = new BigDecimal(filteredResultList.size());
-
-			// 循環小数による例外を回避
-			kaisyu = kaisyu.divide(bunbo, Const.decimalDivideRoundNum, RoundingMode.HALF_UP);
-			payyoffAvg = payyoffAvg.divide(bunbo, Const.decimalDivideRoundNum, RoundingMode.HALF_UP);
-		}
-
-		return new RightTable(
-				kaisyu.doubleValue(),
-				(countSum * 1.0 / boughtBakenNum * 100.0),
-				countSum,
-				boughtBakenNum,
-				payyoffAvg.doubleValue());
-
-	}
+    }
 }

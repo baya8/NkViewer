@@ -32,7 +32,8 @@ public class DataSourceReader {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
-            Map<Integer, List<JsonData>> datasource = mapper.readValue(br.readLine(),
+            Map<Integer, List<JsonData>> datasource = mapper.readValue(
+                    br.readLine(),
                     new TypeReference<Map<Integer, List<JsonData>>>() {
                     });
 

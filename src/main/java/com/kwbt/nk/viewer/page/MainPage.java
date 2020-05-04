@@ -436,7 +436,7 @@ public class MainPage extends JFrame {
             model.setSelectedCourse(comboBoxCourse.getSelectedIndex());
             model.setSelectedSurface(comboBoxSurface.getSelectedIndex());
             model.setSelectedWeather(comboBoxWeather.getSelectedIndex());
-            model.setTableList(tableUtility.conv2LeftTableModel(tableLeft));
+            model.setTableList(tableUtility.getLeftTableModelList(tableLeft));
 
             // 右テーブルを計算
             List<RightTable> resultList = calcInstance.calcRightTable(model);
