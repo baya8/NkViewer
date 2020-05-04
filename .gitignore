@@ -1,0 +1,14 @@
+# eclipse
+/.project
+/.classpath
+
+# java
+*.class
+*.jar
+*.war
+*.ear
+
+# build
+out
+build
+bin
