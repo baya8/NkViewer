@@ -7,17 +7,26 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import lombok.Getter;
-import lombok.Setter;
-
 public class FeaturePayoff implements Serializable {
 
-    @Setter
-    @Getter
     private Integer race_id;
-    @Setter
-    @Getter
     private Integer order_of_finish;
+
+    public Integer getRace_id() {
+        return race_id;
+    }
+
+    public void setRace_id(Integer race_id) {
+        this.race_id = race_id;
+    }
+
+    public Integer getOrder_of_finish() {
+        return order_of_finish;
+    }
+
+    public void setOrder_of_finish(Integer order_of_finish) {
+        this.order_of_finish = order_of_finish;
+    }
 
     @Override
     public int hashCode() {

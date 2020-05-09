@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +31,7 @@ public class ScraipingUtils {
     // private final static String cssSelecterRaceHouseHweightAndDhweight = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(3) > span:nth-child(1)";
     // private final static String cssSelecterRaceHouseHweightAndDhweight = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(1) > span:nth-child(1)";
     private final static String cssSelecterRaceHouseHweightAndDhweight = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(1)";
+    private final static String cssSelecterRaceHouseHWeightAndDhweight2 = "table.mt20 > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(3)";
 
     //    private final static String cssSelecterRaceSpan = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(5) > div:nth-child(1) > div:nth-child(1)";
     private final static String cssSelecterRaceSpan = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(5) > div:nth-child(1) > div:nth-child(1)";
@@ -72,7 +74,9 @@ public class ScraipingUtils {
         cssChildNumMap.put(ScraiperConst.week_sun, 4);
     }
 
+    /** [0-9] */
     private final static Pattern MATCH_NUM = Pattern.compile("[0-9]");
+    /** ^[0-9]+ */
     private final static Pattern MATCH_HWEIGHT = Pattern.compile("^[0-9]+");
     private final static Pattern MATCH_DHWEIGHT = Pattern.compile("\\(.*\\)$");
     private final static Pattern MATCH_ODDS = Pattern.compile("^[0-9]+\\.[0-9]+");
@@ -210,11 +214,52 @@ public class ScraipingUtils {
         }
     }
 
-    protected void select馬体重変動(Document doc, HorseModel horseModel, RaceInfoModel model, int tableRowIndex) {
+    protected void select馬体重変動(
+            Document doc,
+            HorseModel horseModel,
+            RaceInfoModel model,
+            int tableRowIndex) throws Throwable {
+
+        Throwable e = null;
+
+        try {
+
+            // レース終了時の馬体重の場所を指定
+            select馬体重変動(doc, horseModel, model, tableRowIndex, cssSelecterRaceHouseHweightAndDhweight);
+
+        } catch (Exception ex) {
+            e = ex;
+        }
+
+        if (Objects.nonNull(e)) {
+
+            try {
+
+                e = null;
+
+                // レース直前の馬体重の場所を指定
+                select馬体重変動(doc, horseModel, model, tableRowIndex, cssSelecterRaceHouseHWeightAndDhweight2);
+
+            } catch (Exception ex) {
+                e = ex;
+            }
+        }
+
+        if (Objects.nonNull(e)) {
+            throw e;
+        }
+    }
+
+    private void select馬体重変動(
+            Document doc,
+            HorseModel horseModel,
+            RaceInfoModel model,
+            int tableRowIndex,
+            String cssReader) {
 
         Optional<Element> firstElement = doc
-                .query(String.format(cssSelecterRaceHouseHweightAndDhweight, tableRowIndex));
-        logger.info("select {}", String.format(cssSelecterRaceHouseHweightAndDhweight, tableRowIndex));
+                .query(String.format(cssReader, tableRowIndex));
+        logger.info("select {}", String.format(cssReader, tableRowIndex));
 
         if (firstElement.isPresent()) {
 
@@ -226,6 +271,7 @@ public class ScraipingUtils {
 
                 // 馬体重
                 String hweight = getMatchedText(MATCH_HWEIGHT.matcher(weightText));
+                StringUtils.isNumeric(hweight);
                 horseModel.setHweight(Integer.valueOf(hweight));
 
                 // 馬体重変動
@@ -254,7 +300,6 @@ public class ScraipingUtils {
 
     protected void selectレース間隔(Document doc, HorseModel horseModel, RaceInfoModel model, int i) {
 
-        // TODO 初出走はここじゃなくて、単純に馬体重変動のとこ見ればよくね？
         Optional<Element> beforeRun = doc.query(String.format(cssSelecterRaceSpan, i));
         logger.info("select {}", String.format(cssSelecterRaceSpan, i));
         if (beforeRun.isPresent()) {

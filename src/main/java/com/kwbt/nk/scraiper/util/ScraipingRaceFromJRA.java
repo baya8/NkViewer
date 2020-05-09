@@ -113,14 +113,13 @@ public class ScraipingRaceFromJRA {
      *            レース情報モデル
      * @param dialogInput
      *            ダイアログの入力値モデル
-     * @throws InterruptedException
-     *             Thread.sleepメソッドが投げる例外
+     * @throws Throwable
      */
     private void getRaceTitle(
             Document doc,
             RaceInfoModel model,
             CollectRaceFromJRAInputModel dialogInput)
-            throws InterruptedException {
+            throws Throwable {
 
         sUtil.move出馬表(doc);
 
