@@ -27,15 +27,25 @@ public class ScraipingUtils {
 
     private final static Logger logger = LoggerFactory.getLogger(ScraipingUtils.class);
 
+    /**
+     *【CSSセレクタ】馬体重、馬体重変動
+     */
     // private final static String cssSelecterRaceHouseHweightAndDhweight = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(1) > span:nth-child(1)";
     // private final static String cssSelecterRaceHouseHweightAndDhweight = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(3) > span:nth-child(1)";
     // private final static String cssSelecterRaceHouseHweightAndDhweight = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(1) > span:nth-child(1)";
     private final static String cssSelecterRaceHouseHweightAndDhweight = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(1)";
-    private final static String cssSelecterRaceHouseHWeightAndDhweight2 = "table.mt20 > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(3)";
+    private final static String cssSelecterRaceHouseHWeightAndDhweight2 = "table.mt20 > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(2)";
+    private final static String cssSelecterRaceHouseHWeightAndDhweight3 = "table.mt20 > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(2) > div:nth-child(3)";
 
+    /**
+     * 【CSSセレクタ】レース間隔
+     */
     //    private final static String cssSelecterRaceSpan = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(5) > div:nth-child(1) > div:nth-child(1)";
     private final static String cssSelecterRaceSpan = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(5) > div:nth-child(1) > div:nth-child(1)";
 
+    /**
+     * 【CSSセレクタ】オッズ
+     */
     // private final static String cssSelecterRaceOdds = ".mainList > tbody:nth-child(1) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)";
     private final static String cssSelecterRaceOdds = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > strong:nth-child(1)";
 
@@ -43,6 +53,7 @@ public class ScraipingUtils {
      * 【CSSセレクタ】開催曜日と開催場所
      */
     private final static String cssSelecterField = "#main > div:nth-child(%d) > div:nth-child(2) > ul:nth-child(1) > li:nth-child(%d) > a:nth-child(1)";
+
     /**
      * 【CSSセレクタ】レースラウンド
      */
@@ -242,6 +253,20 @@ public class ScraipingUtils {
 
             } catch (Exception ex) {
                 e = ex;
+            }
+
+            if (Objects.nonNull(e)) {
+
+                try {
+
+                    e = null;
+
+                    // レース直前の馬体重の場所を指定
+                    select馬体重変動(doc, horseModel, model, tableRowIndex, cssSelecterRaceHouseHWeightAndDhweight3);
+
+                } catch (Exception exe) {
+                    e = exe;
+                }
             }
         }
 
