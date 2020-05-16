@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.naming.directory.InvalidAttributeValueException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +95,7 @@ public class ScraipingUtils {
     private final static Pattern MATCH_ODDS = Pattern.compile("^[0-9]+\\.[0-9]+");
 
     private final static String parseDateStringFormat = "uuuu年M月d日";
+    private final static String match_dbwehgith_kg = "kg";
 
     /**
      * トップヘッドメニューの「出馬表」をクリック
@@ -280,7 +283,8 @@ public class ScraipingUtils {
             HorseModel horseModel,
             RaceInfoModel model,
             int tableRowIndex,
-            String cssReader) {
+            String cssReader)
+            throws InvalidAttributeValueException {
 
         Optional<Element> firstElement = doc
                 .query(String.format(cssReader, tableRowIndex));
@@ -294,9 +298,13 @@ public class ScraipingUtils {
                         .getText()
                         .get();
 
+                // kg表記がある個所が、馬体重および馬体重変動のエレメント
+                if (!weightText.contains(match_dbwehgith_kg)) {
+                    throw new InvalidAttributeValueException("取得エレメント内に「kg」の文字が含まれない");
+                }
+
                 // 馬体重
                 String hweight = getMatchedText(MATCH_HWEIGHT.matcher(weightText));
-                StringUtils.isNumeric(hweight);
                 horseModel.setHweight(Integer.valueOf(hweight));
 
                 // 馬体重変動
