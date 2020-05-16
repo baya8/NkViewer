@@ -1,6 +1,7 @@
 package com.kwbt.nk.scraiper.page;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -69,62 +70,74 @@ public class CollectJRARaceInfoPage extends JDialog {
      */
     public CollectJRARaceInfoPage() {
 
-        setBounds(100, 100, 511, 272);
+        setBounds(100, 100, 817, 374);
         getContentPane().setLayout(null);
         setTitle("レースデータをスクレイピング");
 
-        buttonPane.setBounds(54, 192, 439, 31);
+        buttonPane.setBounds(332, 283, 457, 42);
         buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
         getContentPane().add(buttonPane);
+        okButton.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
         okButton.setActionCommand("OK");
         buttonPane.add(okButton);
         getRootPane().setDefaultButton(okButton);
+        cancelButton.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
         cancelButton.setActionCommand("Cancel");
         buttonPane.add(cancelButton);
+        labelInformation.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        labelInformation.setBounds(12, 10, 471, 38);
+        labelInformation.setBounds(12, 10, 777, 82);
 
         getContentPane().add(labelInformation);
-        separator.setBounds(12, 58, 481, 1);
+        separator.setBounds(12, 90, 719, 2);
 
         getContentPane().add(separator);
-        labelRaceField.setBounds(22, 69, 75, 13);
+        labelRaceField.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelRaceField.setBounds(22, 102, 135, 31);
 
         getContentPane().add(labelRaceField);
+        radioButton_tokyo.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         radioButton_tokyo.setSelected(true);
-        radioButton_tokyo.setBounds(32, 88, 102, 21);
+        radioButton_tokyo.setBounds(32, 144, 127, 21);
         radioButton_tokyo.setActionCommand(String.valueOf(ScraiperConst.tokyo_num));
 
         getContentPane().add(radioButton_tokyo);
-        radioButton_kyoto.setBounds(32, 111, 102, 21);
+        radioButton_kyoto.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        radioButton_kyoto.setBounds(32, 167, 127, 21);
         radioButton_kyoto.setActionCommand(String.valueOf(ScraiperConst.kyoto_num));
 
         getContentPane().add(radioButton_kyoto);
-        radioButton_nigata.setBounds(32, 134, 102, 21);
+        radioButton_nigata.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        radioButton_nigata.setBounds(32, 190, 127, 21);
         radioButton_nigata.setActionCommand(String.valueOf(ScraiperConst.nigata_num));
 
         getContentPane().add(radioButton_nigata);
-        labelRaceRound.setBounds(252, 69, 75, 13);
+        labelRaceRound.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelRaceRound.setBounds(348, 102, 105, 31);
 
         getContentPane().add(labelRaceRound);
+        inputAreaRaceRound.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        inputAreaRaceRound.setBounds(262, 87, 75, 22);
+        inputAreaRaceRound.setBounds(358, 142, 87, 26);
         inputAreaRaceRound.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 
         getContentPane().add(inputAreaRaceRound);
-        labelRaceWeek.setBounds(153, 69, 75, 13);
+        labelRaceWeek.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelRaceWeek.setBounds(188, 102, 112, 31);
 
         getContentPane().add(labelRaceWeek);
+        raceDateWeek_sat.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         raceDateWeek_sat.setSelected(true);
         raceDateWeek_sat.setActionCommand("1");
-        raceDateWeek_sat.setBounds(163, 88, 75, 21);
+        raceDateWeek_sat.setBounds(198, 144, 75, 21);
         raceDateWeek_sat.setActionCommand(String.valueOf(ScraiperConst.week_sat));
 
         getContentPane().add(raceDateWeek_sat);
+        raceDateWeek_sun.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         raceDateWeek_sun.setActionCommand("1");
-        raceDateWeek_sun.setBounds(163, 111, 75, 21);
+        raceDateWeek_sun.setBounds(198, 167, 75, 21);
         raceDateWeek_sun.setActionCommand(String.valueOf(ScraiperConst.week_sun));
 
         getContentPane().add(raceDateWeek_sun);

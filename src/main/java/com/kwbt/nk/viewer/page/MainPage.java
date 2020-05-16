@@ -142,8 +142,9 @@ public class MainPage extends JFrame {
     public MainPage() {
 
         logger.info("start constractor");
+        textFieldDistance.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        textFieldDistance.setBounds(348, 40, 100, 20);
+        textFieldDistance.setBounds(348, 40, 100, 32);
         textFieldDistance.setColumns(10);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -162,9 +163,10 @@ public class MainPage extends JFrame {
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
-        scrollPaneLeft.setBounds(12, 194, 364, 426);
+        scrollPaneLeft.setBounds(12, 170, 364, 426);
 
         contentPane.add(scrollPaneLeft);
+        tableWhere.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         tableWhere.setModel(new DefaultTableModel(
                 new Object[][] {
                         { new Integer(1), null, null, null, null },
@@ -215,32 +217,41 @@ public class MainPage extends JFrame {
         tableWhere.getColumnModel().getColumn(0).setPreferredWidth(41);
 
         scrollPaneLeft.setViewportView(tableWhere);
+        comboBoxSurface.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         comboBoxSurface.setModel(new DefaultComboBoxModel<>(Const.surfaceArray));
-        comboBoxSurface.setBounds(12, 39, 100, 20);
+        comboBoxSurface.setBounds(12, 39, 100, 33);
 
         contentPane.add(comboBoxSurface);
+        comboBoxWeather.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         comboBoxWeather.setModel(new DefaultComboBoxModel<>(Const.weatherArray));
-        comboBoxWeather.setBounds(124, 39, 100, 20);
+        comboBoxWeather.setBounds(124, 39, 100, 33);
 
         contentPane.add(comboBoxWeather);
+        comboBoxCourse.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         comboBoxCourse.setModel(new DefaultComboBoxModel<>(Const.courseArray));
-        comboBoxCourse.setBounds(236, 39, 100, 20);
+        comboBoxCourse.setBounds(236, 39, 100, 33);
 
         contentPane.add(comboBoxCourse);
         contentPane.add(textFieldDistance);
-        labelSurface.setBounds(12, 15, 50, 13);
+        labelSurface.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelSurface.setBounds(12, 10, 50, 18);
         contentPane.add(labelSurface);
-        labelWeather.setBounds(124, 15, 50, 13);
+        labelWeather.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelWeather.setBounds(124, 10, 50, 18);
         contentPane.add(labelWeather);
-        labelCourse.setBounds(236, 15, 50, 13);
+        labelCourse.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelCourse.setBounds(236, 10, 50, 18);
         contentPane.add(labelCourse);
-        labelDistance.setBounds(348, 15, 50, 13);
+        labelDistance.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelDistance.setBounds(348, 10, 50, 18);
         contentPane.add(labelDistance);
-        btnClearTableLeft.setBounds(285, 630, 91, 21);
+        btnClearTableLeft.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        btnClearTableLeft.setBounds(285, 606, 91, 34);
         contentPane.add(btnClearTableLeft);
-        scrollPaneRight.setBounds(390, 194, 407, 426);
+        scrollPaneRight.setBounds(388, 170, 407, 426);
 
         contentPane.add(scrollPaneRight);
+        tableResult.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         tableResult.setModel(new DefaultTableModel(
                 new Object[][] {
                         { null, null, null, null, null },
@@ -282,23 +293,27 @@ public class MainPage extends JFrame {
         });
 
         scrollPaneRight.setViewportView(tableResult);
-        btnClearTableRight.setBounds(706, 630, 91, 21);
+        btnClearTableRight.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        btnClearTableRight.setBounds(704, 606, 91, 34);
         contentPane.add(btnClearTableRight);
         btnAnalyze.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
         btnAnalyze.setBounds(587, 11, 139, 48);
         contentPane.add(btnAnalyze);
-        labelRaceTitle.setBounds(12, 91, 364, 48);
+        labelRaceTitle.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelRaceTitle.setBounds(124, 82, 364, 41);
         btnGetRaceInfo.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
         btnGetRaceInfo.setBounds(460, 11, 117, 48);
         contentPane.add(btnGetRaceInfo);
 
         contentPane.add(labelRaceTitle);
-        labelRace.setBounds(12, 69, 71, 13);
+        labelRace.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        labelRace.setBounds(22, 82, 100, 28);
 
         contentPane.add(labelRace);
-        scrollPaneKakudo.setBounds(813, 194, 274, 426);
+        scrollPaneKakudo.setBounds(807, 170, 274, 426);
 
         contentPane.add(scrollPaneKakudo);
+        tableExpecation.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
         tableExpecation.setModel(new DefaultTableModel(
                 new Object[][] {
                         { new Integer(1), null, null, null },
@@ -351,14 +366,17 @@ public class MainPage extends JFrame {
         tableExpecation.getColumnModel().getColumn(3).setPreferredWidth(100);
 
         scrollPaneKakudo.setViewportView(tableExpecation);
+        labelInfoTable1.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        labelInfoTable1.setBounds(12, 171, 50, 13);
+        labelInfoTable1.setBounds(12, 133, 864, 27);
         contentPane.add(labelInfoTable1);
+        labelInfoTable2.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        labelInfoTable2.setBounds(390, 171, 50, 13);
+        labelInfoTable2.setBounds(388, 133, 488, 27);
         contentPane.add(labelInfoTable2);
+        labelInfoTable3.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
 
-        labelInfoTable3.setBounds(813, 171, 50, 13);
+        labelInfoTable3.setBounds(807, 133, 69, 27);
         contentPane.add(labelInfoTable3);
 
         progressBar = new JProgressBar();
@@ -418,8 +436,8 @@ public class MainPage extends JFrame {
 
                 new MessageBuilder()
                         .addLine("NetKeiba Viewer")
-                        .addLine("version: 3.0.2")
-                        .addLine("copy right: kawabata 2019")
+                        .addLine("version: 3.0.3")
+                        .addLine("copy right: kawabata 2020")
                         .addLine(dbStatus)
                         .showMessage(contentPane, "情報", JOptionPane.INFORMATION_MESSAGE);
             }
