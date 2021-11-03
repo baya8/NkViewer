@@ -1,18 +1,19 @@
 package com.kwbt.nk.viewer.page;
 
+import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Objects;
 
-import javax.swing.DefaultComboBoxModel;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -20,31 +21,32 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.UIManager;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kwbt.nk.scraiper.constant.ScraiperConst;
-import com.kwbt.nk.scraiper.page.CollectJRARaceInfoPage;
-import com.kwbt.nk.scraiper.util.ScraipingRaceFromJRA;
+import com.kwbt.nk.common.MatcherConst;
+import com.kwbt.nk.scraip.NkInput;
+import com.kwbt.nk.scraip.NkOutput;
+import com.kwbt.nk.scraip.NkScraip;
 import com.kwbt.nk.viewer.constant.Const;
 import com.kwbt.nk.viewer.core.Calculation;
-import com.kwbt.nk.viewer.core.ExpectationLogic;
+import com.kwbt.nk.viewer.helper.TableRefresh;
 import com.kwbt.nk.viewer.model.CalcModel;
-import com.kwbt.nk.viewer.model.ExpecationModel;
+import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
 import com.kwbt.nk.viewer.util.DataSourceReader;
-import com.kwbt.nk.viewer.util.GetSheetData;
-import com.kwbt.nk.viewer.util.JComboBoxUtility;
 import com.kwbt.nk.viewer.util.MessageBuilder;
-import com.kwbt.nk.viewer.util.ScraipingSetter;
 import com.kwbt.nk.viewer.util.TableUtility;
 
 public class MainPage extends JFrame {
@@ -52,68 +54,57 @@ public class MainPage extends JFrame {
     /** ロガー */
     private final static Logger logger = LoggerFactory.getLogger(MainPage.class);
 
-    /** テーブルに値を書き込んだりするツール */
-    private final static TableUtility tableUtility = new TableUtility();
-
-    /** コンボボックスをなんやかんやするためのツール */
-    private final static JComboBoxUtility jComboBoxUtility = new JComboBoxUtility();
-
-    /** スクレイピング結果を画面に設定するツール */
-    private final static ScraipingSetter scraipSetter = new ScraipingSetter();
-
-    /** 各種計算ツール */
-    private final Calculation calcInstance = new Calculation();
-
-    private final ExpectationLogic expectationLogic = new ExpectationLogic();
-
     /**
      * 画面コンポーネント
      */
     private JPanel contentPane;
 
+    private final ButtonGroup group_raceField = new ButtonGroup();
+    private final ButtonGroup group_raceWeekday = new ButtonGroup();
+
     // メニュー
-    private JMenuBar menuBar = new JMenuBar();
-    private JMenu menuFile = new JMenu("ファイル");
-    private JMenuItem menuItemFileExit = new JMenuItem("終了");
-    private JMenu menuKino = new JMenu("機能");
-    private JMenuItem menuItemKinoJRA = new JMenuItem("レースヘルプ(JRA)");
-    private JMenu menuHelp = new JMenu("ヘルプ");;
-    private JMenuItem menuItemHelpInfo = new JMenuItem("情報");
+    private final JMenuBar menuBar = new JMenuBar();
+    private final JMenu menuFile = new JMenu("ファイル");
+    private final JMenuItem menuItemFileExit = new JMenuItem("終了");
+    private final JMenu menuHelp = new JMenu("ヘルプ");;
+    private final JMenuItem menuItemHelpInfo = new JMenuItem("情報");
+    private final JLabel labelStr03 = new JLabel("地面");
+    private final JLabel labelStr05 = new JLabel("コース");
+    private final JLabel labelStr06 = new JLabel("天気");
+    private final JLabel labelStr07 = new JLabel("レース名");
+    private final JRadioButton input_radioButton_tokyo = new JRadioButton("東京(新潟)");
+    private final JRadioButton input_radioButton_kyoto = new JRadioButton("京都(小倉)");
+    private final JRadioButton input_radioButton_nigata = new JRadioButton("新潟(札幌)");
+    private final JRadioButton input_radioButton_sat = new JRadioButton("土曜");
+    private final JRadioButton input_radioButton_sun = new JRadioButton("日曜");
+    private final JLabel labelStr01_1 = new JLabel("レース情報");
+    private final JScrollPane scrollPaneHorse = new JScrollPane();
+    private final JTable table_horse = new JTable();
+    private final JButton button_getRaceInfo = new JButton("レース情報取得");
+    private final JButton button_calc = new JButton("勝率算出");
+    private final JScrollPane scrollPaneHorse_1 = new JScrollPane();
+    private final JTable table_calc = new JTable();
+    private final JPanel group_place = new JPanel();
+    private final JPanel group_days = new JPanel();
+    private final JPanel panel = new JPanel();
+    private final JLabel label_distance = new JLabel("");
+    private final JLabel label_weather = new JLabel("");
+    private final JLabel labelStr04_1 = new JLabel("距離");
+    private final JLabel label_course = new JLabel("");
+    private final JLabel label_surface = new JLabel("");
+    private final JLabel label_raceName = new JLabel("");
+    private final JButton button_refresh = new JButton("リフレッシュ");
+    private final JPanel panel_1 = new JPanel();
+    private final JTable table = new JTable();
+    private final JTextField input_roundNumber;
 
-    // テーブル用スクロールパネル
-    private final JScrollPane scrollPaneLeft = new JScrollPane();
-    private final JScrollPane scrollPaneRight = new JScrollPane();
-    private final JScrollPane scrollPaneKakudo = new JScrollPane();
-
-    // テーブル
-    private final JTable tableWhere = new JTable();
-    private final JTable tableResult = new JTable();
-    private final JTable tableExpecation = new JTable();
-
-    private final JFormattedTextField textFieldDistance = new JFormattedTextField(new DecimalFormat("####"));
-
-    // コンボボックス
-    private final JComboBox<String> comboBoxSurface = new JComboBox<>();
-    private final JComboBox<String> comboBoxWeather = new JComboBox<>();
-    private final JComboBox<String> comboBoxCourse = new JComboBox<>();
-
-    // 押しボタン
-    private final JButton btnClearTableLeft = new JButton("clear");
-    private final JButton btnClearTableRight = new JButton("clear");
-    private final JButton btnAnalyze = new JButton("Calcuration");
-    private final JButton btnGetRaceInfo = new JButton("GetRace");
-
-    // ラベル
-    private final JLabel labelSurface = new JLabel("地面");
-    private final JLabel labelWeather = new JLabel("天気");
-    private final JLabel labelCourse = new JLabel("コース");
-    private final JLabel labelDistance = new JLabel("距離");
-    private final JLabel labelRaceTitle = new JLabel("");
-    private final JLabel labelRace = new JLabel("レース情報");
-    private final JLabel labelInfoTable1 = new JLabel("条件入力");
-    private final JLabel labelInfoTable2 = new JLabel("結果表示");
-    private final JLabel labelInfoTable3 = new JLabel("期待値");
-    private JProgressBar progressBar;
+    /**
+     * その他部品
+     */
+    private final TableRefresh tableRefresh = new TableRefresh();
+    private final TableUtility tableUtility = new TableUtility();
+    private final NkScraip scraip = new NkScraip();
+    private final Calculation calculation = new Calculation();
 
     /**
      * Launch the application.
@@ -142,273 +133,270 @@ public class MainPage extends JFrame {
     public MainPage() {
 
         logger.info("start constractor");
-        textFieldDistance.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-
-        textFieldDistance.setBounds(348, 40, 100, 32);
-        textFieldDistance.setColumns(10);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 1231, 721);
+        setBounds(100, 100, 1228, 661);
 
         setJMenuBar(menuBar);
         menuBar.add(menuFile);
 
         menuFile.add(menuItemFileExit);
-        menuBar.add(menuKino);
-        menuKino.add(menuItemKinoJRA);
         menuBar.add(menuHelp);
         menuHelp.add(menuItemHelpInfo);
 
         contentPane = new JPanel();
-        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+        contentPane.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
         setContentPane(contentPane);
         contentPane.setLayout(null);
-        scrollPaneLeft.setBounds(12, 170, 364, 426);
 
-        contentPane.add(scrollPaneLeft);
-        tableWhere.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        tableWhere.setModel(new DefaultTableModel(
+        group_place.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "\u958B\u50AC\u5730", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+        group_place.setBounds(330, 20, 93, 94);
+
+        contentPane.add(group_place);
+        group_place.setLayout(new GridLayout(0, 1, 0, 0));
+        group_place.add(input_radioButton_tokyo);
+        input_radioButton_tokyo.setSelected(true);
+        input_radioButton_tokyo.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        input_radioButton_tokyo.setActionCommand(String.valueOf(NkInput.開催地.東京.getInt()));
+
+        group_raceField.add(input_radioButton_tokyo);
+        group_place.add(input_radioButton_kyoto);
+        input_radioButton_kyoto.setSelected(true);
+        input_radioButton_kyoto.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        input_radioButton_kyoto.setActionCommand(String.valueOf(NkInput.開催地.阪神.getInt()));
+        group_raceField.add(input_radioButton_kyoto);
+        group_place.add(input_radioButton_nigata);
+        input_radioButton_nigata.setSelected(true);
+        input_radioButton_nigata.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        input_radioButton_nigata.setActionCommand(String.valueOf(NkInput.開催地.新潟.getInt()));
+        group_raceField.add(input_radioButton_nigata);
+        group_days.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "\u66DC\u65E5", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+        group_days.setBounds(450, 20, 61, 68);
+
+        contentPane.add(group_days);
+        group_days.setLayout(null);
+
+        group_raceWeekday.add(input_radioButton_sat);
+        input_radioButton_sat.setBounds(6, 15, 49, 21);
+        group_days.add(input_radioButton_sat);
+        input_radioButton_sat.setSelected(true);
+        input_radioButton_sat.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        input_radioButton_sat.setActionCommand(String.valueOf(NkInput.曜日.土曜.getInt()));
+        group_raceWeekday.add(input_radioButton_sun);
+        input_radioButton_sun.setBounds(6, 41, 49, 21);
+        group_days.add(input_radioButton_sun);
+        input_radioButton_sun.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        input_radioButton_sun.setActionCommand(String.valueOf(NkInput.曜日.日曜.getInt()));
+
+        panel_1.setBounds(230, 153, 292, 21);
+        contentPane.add(panel_1);
+        GridBagLayout gbl_panel_1 = new GridBagLayout();
+        gbl_panel_1.columnWidths = new int[] { 107, 81, 81, 0 };
+        gbl_panel_1.rowHeights = new int[] { 21, 0 };
+        gbl_panel_1.columnWeights = new double[] { 0.0, 0.0, 1.0, Double.MIN_VALUE };
+        gbl_panel_1.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
+        panel_1.setLayout(gbl_panel_1);
+        GridBagConstraints gbc_button_getRaceInfo = new GridBagConstraints();
+        gbc_button_getRaceInfo.fill = GridBagConstraints.HORIZONTAL;
+        gbc_button_getRaceInfo.anchor = GridBagConstraints.NORTH;
+        gbc_button_getRaceInfo.insets = new Insets(0, 0, 0, 5);
+        gbc_button_getRaceInfo.gridx = 0;
+        gbc_button_getRaceInfo.gridy = 0;
+        panel_1.add(button_getRaceInfo, gbc_button_getRaceInfo);
+        GridBagConstraints gbc_button_calc = new GridBagConstraints();
+        gbc_button_calc.fill = GridBagConstraints.HORIZONTAL;
+        gbc_button_calc.anchor = GridBagConstraints.NORTH;
+        gbc_button_calc.insets = new Insets(0, 0, 0, 5);
+        gbc_button_calc.gridx = 1;
+        gbc_button_calc.gridy = 0;
+        panel_1.add(button_calc, gbc_button_calc);
+
+        GridBagConstraints gbc_button_refresh = new GridBagConstraints();
+        gbc_button_refresh.fill = GridBagConstraints.HORIZONTAL;
+        gbc_button_refresh.anchor = GridBagConstraints.NORTH;
+        gbc_button_refresh.gridx = 2;
+        gbc_button_refresh.gridy = 0;
+        panel_1.add(button_refresh, gbc_button_refresh);
+        labelStr01_1.setBounds(25, 199, 93, 13);
+        labelStr01_1.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        contentPane.add(labelStr01_1);
+        scrollPaneHorse.setBounds(17, 222, 406, 355);
+        contentPane.add(scrollPaneHorse);
+        table_horse.setModel(
+                new DefaultTableModel(
+                        new Object[][] {
+                                { "1", null, null, null, null },
+                                { "2", null, null, null, null },
+                                { "3", null, null, null, null },
+                                { "4", null, null, null, null },
+                                { "5", null, null, null, null },
+                                { "6", null, null, null, null },
+                                { "7", null, null, null, null },
+                                { "8", null, null, null, null },
+                                { "9", null, null, null, null },
+                                { "10", null, null, null, null },
+                                { "11", null, null, null, null },
+                                { "12", null, null, null, null },
+                                { "13", null, null, null, null },
+                                { "14", null, null, null, null },
+                                { "15", null, null, null, null },
+                                { "16", null, null, null, null },
+                                { "17", null, null, null, null },
+                                { "18", null, null, null, null },
+                                { "19", null, null, null, null },
+                                { "20", null, null, null, null },
+                        },
+                        new String[] { "No", "weight", "dhweight", "dsl", "odds" }) {
+                    boolean[] columnEditables = new boolean[] { true, false, true, true, true };
+
+                    public boolean isCellEditable(int row, int column) {
+                        return columnEditables[column];
+                    }
+                });
+        table_horse.getColumnModel().getColumn(0).setPreferredWidth(35);
+        table_horse.getColumnModel().getColumn(1).setPreferredWidth(60);
+        table_horse.getColumnModel().getColumn(2).setPreferredWidth(60);
+        table_horse.getColumnModel().getColumn(3).setPreferredWidth(60);
+        table_horse.getColumnModel().getColumn(4).setPreferredWidth(60);
+        table_horse.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+
+        scrollPaneHorse.setViewportView(table_horse);
+        scrollPaneHorse_1.setBounds(434, 221, 376, 355);
+        contentPane.add(scrollPaneHorse_1);
+        table_calc.setModel(
+                new DefaultTableModel(
+                        new Object[][] {
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                                { null, null, null, null, null },
+                        },
+                        new String[] { "\u56DE\u53CE\u7387(avg)", "\u52DD\u7387(%)", "\u7DCF\u6570", "\u8CFC\u5165\u6570", "\u30DA\u30A4\u30AA\u30D5" }) {
+                    boolean[] columnEditables = new boolean[] { false, false, false, false, false };
+
+                    public boolean isCellEditable(int row, int column) {
+                        return columnEditables[column];
+                    }
+                });
+        table_calc.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+
+        scrollPaneHorse_1.setViewportView(table_calc);
+        panel.setBorder(
+                new TitledBorder(
+                        new EtchedBorder(
+                                EtchedBorder.LOWERED,
+                                new Color(255, 255, 255),
+                                new Color(160, 160, 160)),
+                        "\u30EC\u30FC\u30B9\u60C5\u5831",
+                        TitledBorder.LEADING,
+                        TitledBorder.TOP,
+                        null,
+                        new Color(0, 0, 0)));
+        panel.setBounds(16, 20, 275, 128);
+
+        contentPane.add(panel);
+        panel.setLayout(new GridLayout(0, 2, 0, 0));
+        panel.add(labelStr07);
+
+        panel.add(label_raceName);
+
+        panel.add(labelStr04_1);
+
+        panel.add(label_distance);
+        panel.add(labelStr03);
+
+        panel.add(label_surface);
+        panel.add(labelStr05);
+
+        panel.add(label_course);
+        panel.add(labelStr06);
+
+        panel.add(label_weather);
+
+        JLabel labelStr01_1_1 = new JLabel("予想結果");
+        labelStr01_1_1.setFont(new Font("MS UI Gothic", Font.PLAIN, 12));
+        labelStr01_1_1.setBounds(434, 199, 93, 13);
+        contentPane.add(labelStr01_1_1);
+
+        JScrollPane scrollPaneHorse_1_1 = new JScrollPane();
+        scrollPaneHorse_1_1.setBounds(822, 222, 300, 355);
+        contentPane.add(scrollPaneHorse_1_1);
+        table.setModel(new DefaultTableModel(
                 new Object[][] {
-                        { new Integer(1), null, null, null, null },
-                        { new Integer(2), null, null, null, null },
-                        { new Integer(3), null, null, null, null },
-                        { new Integer(4), null, null, null, null },
-                        { new Integer(5), null, null, null, null },
-                        { new Integer(6), null, null, null, null },
-                        { new Integer(7), null, null, null, null },
-                        { new Integer(8), null, null, null, null },
-                        { new Integer(9), null, null, null, null },
-                        { new Integer(10), null, null, null, null },
-                        { new Integer(11), null, null, null, null },
-                        { new Integer(12), null, null, null, null },
-                        { new Integer(13), null, null, null, null },
-                        { new Integer(14), null, null, null, null },
-                        { new Integer(15), null, null, null, null },
-                        { new Integer(16), null, null, null, null },
-                        { new Integer(17), null, null, null, null },
-                        { new Integer(18), null, null, null, null },
-                        { new Integer(19), null, null, null, null },
-                        { new Integer(20), null, null, null, null },
-                        { new Integer(21), null, null, null, null },
-                        { new Integer(22), null, null, null, null },
-                        { new Integer(23), null, null, null, null },
-                        { new Integer(24), null, null, null, null },
-                        { new Integer(25), null, null, null, null },
-                },
-                new String[] {
-                        "\u99ACNo", "weight", "dhweight", "dsl", "odds"
-                }) {
-            Class[] columnTypes = new Class[] {
-                    Integer.class, Double.class, Double.class, Integer.class, Double.class
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return columnTypes[columnIndex];
-            }
-
-            boolean[] columnEditables = new boolean[] {
-                    false, true, true, true, true
-            };
-
-            public boolean isCellEditable(int row, int column) {
-                return columnEditables[column];
-            }
-        });
-        tableWhere.getColumnModel().getColumn(0).setPreferredWidth(41);
-
-        scrollPaneLeft.setViewportView(tableWhere);
-        comboBoxSurface.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        comboBoxSurface.setModel(new DefaultComboBoxModel<>(Const.surfaceArray));
-        comboBoxSurface.setBounds(12, 39, 100, 33);
-
-        contentPane.add(comboBoxSurface);
-        comboBoxWeather.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        comboBoxWeather.setModel(new DefaultComboBoxModel<>(Const.weatherArray));
-        comboBoxWeather.setBounds(124, 39, 100, 33);
-
-        contentPane.add(comboBoxWeather);
-        comboBoxCourse.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        comboBoxCourse.setModel(new DefaultComboBoxModel<>(Const.courseArray));
-        comboBoxCourse.setBounds(236, 39, 100, 33);
-
-        contentPane.add(comboBoxCourse);
-        contentPane.add(textFieldDistance);
-        labelSurface.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelSurface.setBounds(12, 10, 50, 18);
-        contentPane.add(labelSurface);
-        labelWeather.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelWeather.setBounds(124, 10, 50, 18);
-        contentPane.add(labelWeather);
-        labelCourse.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelCourse.setBounds(236, 10, 50, 18);
-        contentPane.add(labelCourse);
-        labelDistance.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelDistance.setBounds(348, 10, 50, 18);
-        contentPane.add(labelDistance);
-        btnClearTableLeft.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        btnClearTableLeft.setBounds(285, 606, 91, 34);
-        contentPane.add(btnClearTableLeft);
-        scrollPaneRight.setBounds(388, 170, 407, 426);
-
-        contentPane.add(scrollPaneRight);
-        tableResult.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        tableResult.setModel(new DefaultTableModel(
-                new Object[][] {
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                        { null, null, null, null, null },
-                },
-                new String[] {
-                        "\u56DE\u53CE\u7387(avg)", "\u52DD\u7387(%)", "\u30AB\u30A6\u30F3\u30C8(count)", "\u8CFC\u5165\u6570(sum)", "\u30DA\u30A4\u30AA\u30D5"
-                }) {
-            boolean[] columnEditables = new boolean[] {
-                    false, false, false, false, false
-            };
-
-            public boolean isCellEditable(int row, int column) {
-                return columnEditables[column];
-            }
-        });
-
-        scrollPaneRight.setViewportView(tableResult);
-        btnClearTableRight.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        btnClearTableRight.setBounds(704, 606, 91, 34);
-        contentPane.add(btnClearTableRight);
-        btnAnalyze.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
-        btnAnalyze.setBounds(587, 11, 139, 48);
-        contentPane.add(btnAnalyze);
-        labelRaceTitle.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelRaceTitle.setBounds(124, 82, 364, 41);
-        btnGetRaceInfo.setFont(new Font("MS UI Gothic", Font.BOLD, 16));
-        btnGetRaceInfo.setBounds(460, 11, 117, 48);
-        contentPane.add(btnGetRaceInfo);
-
-        contentPane.add(labelRaceTitle);
-        labelRace.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        labelRace.setBounds(22, 82, 100, 28);
-
-        contentPane.add(labelRace);
-        scrollPaneKakudo.setBounds(807, 170, 274, 426);
-
-        contentPane.add(scrollPaneKakudo);
-        tableExpecation.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
-        tableExpecation.setModel(new DefaultTableModel(
-                new Object[][] {
-                        { new Integer(1), null, null, null },
-                        { new Integer(2), null, null, null },
-                        { new Integer(3), null, null, null },
-                        { new Integer(4), null, null, null },
-                        { new Integer(5), null, null, null },
-                        { new Integer(6), null, null, null },
-                        { new Integer(7), null, null, null },
-                        { new Integer(8), null, null, null },
-                        { new Integer(9), null, null, null },
-                        { new Integer(10), null, null, null },
-                        { new Integer(11), null, null, null },
-                        { new Integer(12), null, null, null },
-                        { new Integer(13), null, null, null },
-                        { new Integer(14), null, null, null },
-                        { new Integer(15), null, null, null },
-                        { new Integer(16), null, null, null },
-                        { new Integer(17), null, null, null },
-                        { new Integer(18), null, null, null },
-                        { new Integer(19), null, null, null },
-                        { new Integer(20), null, null, null },
-                        { new Integer(21), null, null, null },
-                        { new Integer(22), null, null, null },
-                        { new Integer(23), null, null, null },
-                        { new Integer(24), null, null, null },
-                        { new Integer(25), null, null, null },
+                        { "1", null, null, null },
+                        { "2", null, null, null },
+                        { "3", null, null, null },
+                        { "4", null, null, null },
+                        { "5", null, null, null },
+                        { "6", null, null, null },
+                        { "7", null, null, null },
+                        { "8", null, null, null },
+                        { "9", null, null, null },
+                        { "10", null, null, null },
+                        { "11", null, null, null },
+                        { "12", null, null, null },
+                        { "13", null, null, null },
+                        { "14", null, null, null },
+                        { "15", null, null, null },
+                        { "16", null, null, null },
+                        { "17", null, null, null },
+                        { "18", null, null, null },
+                        { "19", null, null, null },
+                        { "20", null, null, null },
                 },
                 new String[] {
                         "\u8CFC\u5165\u6570", "\u99ACNo", "\u52DD\u7387", "\u671F\u5F85\u5024"
                 }) {
-            Class[] columnTypes = new Class[] {
-                    Integer.class, Integer.class, Object.class, Object.class
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return columnTypes[columnIndex];
-            }
-
             boolean[] columnEditables = new boolean[] {
-                    false, false, false, false
+                    false, true, true, true
             };
 
             public boolean isCellEditable(int row, int column) {
                 return columnEditables[column];
             }
         });
-        tableExpecation.getColumnModel().getColumn(0).setPreferredWidth(40);
-        tableExpecation.getColumnModel().getColumn(1).setPreferredWidth(50);
-        tableExpecation.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table.getColumnModel().getColumn(0).setResizable(false);
+        table.getColumnModel().getColumn(0).setPreferredWidth(41);
 
-        scrollPaneKakudo.setViewportView(tableExpecation);
-        labelInfoTable1.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        scrollPaneHorse_1_1.setViewportView(table);
 
-        labelInfoTable1.setBounds(12, 133, 864, 27);
-        contentPane.add(labelInfoTable1);
-        labelInfoTable2.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        JPanel group_round = new JPanel();
+        group_round.setLayout(null);
+        group_round.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "ラウンド", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+        group_round.setBounds(525, 20, 84, 53);
+        contentPane.add(group_round);
 
-        labelInfoTable2.setBounds(388, 133, 488, 27);
-        contentPane.add(labelInfoTable2);
-        labelInfoTable3.setFont(new Font("MS UI Gothic", Font.PLAIN, 20));
+        input_roundNumber = new JTextField();
+        input_roundNumber.setBounds(12, 20, 44, 19);
+        group_round.add(input_roundNumber);
+        input_roundNumber.setColumns(10);
 
-        labelInfoTable3.setBounds(807, 133, 69, 27);
-        contentPane.add(labelInfoTable3);
-
-        progressBar = new JProgressBar();
-        progressBar.setBounds(1057, 15, 146, 14);
-        contentPane.add(progressBar);
+        JLabel labelStr01_1_1_1 = new JLabel("R");
+        labelStr01_1_1_1.setBounds(60, 23, 17, 13);
+        group_round.add(labelStr01_1_1_1);
 
         setTitle("NkViewer");
 
-        // JTableのセルが編集中の状態でもコミットする
-        // https://ateraimemo.com/Swing/TerminateEdit.html
-        tableWhere.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-
-        // コンポーネントにハンドラーを登録する
         listenerHandle();
 
-        // 起動時の各チェック
-        initCheck();
-    }
-
-    /**
-     * 起動時の各チェック
-     */
-    private void initCheck() {
-
-        // データソースの読み込みチェック
+        // dataSourceの読み込み
         Const.dataSheetMap = DataSourceReader.readJsonFile(Const.dataFile);
-        if (Const.dataSheetMap.isEmpty()) {
-            new MessageBuilder()
-                    .addLine("データソースが読み込みに失敗しています。")
-                    .addLine("ログを開発者へ送付してください。")
-                    .showMessage(contentPane, "警告", JOptionPane.WARNING_MESSAGE);
-        }
     }
 
     /**
@@ -416,199 +404,202 @@ public class MainPage extends JFrame {
      */
     private void listenerHandle() {
 
-        // メニューの終了
+        // メニューの終了処理
         menuItemFileExit.addActionListener(new ActionListener() {
+
+            @Override
             public void actionPerformed(ActionEvent e) {
                 exit();
             }
         });
 
-        // [メニュー] - [ヘルプ] - [情報]
+        // バージョン情報
         menuItemHelpInfo.addActionListener(new ActionListener() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
 
-                String label = Const.dataSheetMap.isEmpty()
-                        ? "NG"
-                        : "OK";
-
-                String dbStatus = String.format("データソースの読込状況：%s", label);
-
                 new MessageBuilder()
-                        .addLine("NetKeiba Viewer")
-                        .addLine("version: 3.0.3")
-                        .addLine("copy right: kawabata 2020")
-                        .addLine(dbStatus)
+                        .addLine("Netkeiba Viewer")
+                        .addLine("version: 4.0")
+                        .addLine("copy right: kawabata 2021")
                         .showMessage(contentPane, "情報", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
-        // (メニュー)JRAスクレイピング入力画面
-        menuItemKinoJRA.addActionListener(
-                getScrapingListener());
+        // リフレッシュ
+        button_refresh.addActionListener(new ActionListener() {
 
-        btnGetRaceInfo.addActionListener(
-                getScrapingListener());
-
-        // 左テーブルクリアボタン
-        btnClearTableLeft.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                tableUtility.clearLeftTable(tableWhere);
-            }
-        });
-
-        // 右テーブルクリアボタン
-        btnClearTableRight.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                tableUtility.clearRightTable(tableResult);
-            }
-        });
-
-        // 計算ボタン
-        btnAnalyze.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                startCalc();
-            }
-        });
-
-        // DELETEキー押下でセルの値を削除
-        tableWhere.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyPressed(KeyEvent e) {
-                tableUtility.deleteCellValue(tableWhere);
+            public void actionPerformed(ActionEvent e) {
+                refresh();
             }
         });
-    }
 
-    /**
-     * 左テーブルの入力値から右テーブルの計算を行う。
-     */
-    private void startCalc() {
+        // レース情報をスクレイピング
+        button_getRaceInfo.addActionListener(new ActionListener() {
 
-        if (inputValidationIsOk()) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
 
-            // 入力値をモデルへセット
-            CalcModel model = new CalcModel();
-            model.setInputedDistance(Integer.valueOf(textFieldDistance.getText()));
-            model.setSelectedCourse(comboBoxCourse.getSelectedIndex());
-            model.setSelectedSurface(comboBoxSurface.getSelectedIndex());
-            model.setSelectedWeather(comboBoxWeather.getSelectedIndex());
-            model.setTableList(tableUtility.conv2LeftTableModel(tableWhere));
+                tableRefresh.refreshTableHasNo(table_horse);
+                tableRefresh.refreshTableNotContainNo(table_calc);
 
-            try {
+                NkOutput output = scraiping();
+                if (Objects.isNull(output)) {
+                    return;
+                }
 
-                // 右テーブルを計算
-                List<RightTable> resultList = calcInstance.calcRightTable(model);
-                tableUtility.setValueToRightTable(tableResult, resultList);
-
-                // 期待値テーブル処理
-                List<ExpecationModel> expectationList = expectationLogic.getKitaichiList(resultList);
-                tableUtility.setValueToExpectationTable(tableExpecation, expectationList);
-
-            } catch (Exception e) {
-
-                e.printStackTrace();
-                logger.error("", e.fillInStackTrace());
-                JOptionPane.showMessageDialog(this, "計算が異常終了しました。", "ERROR", JOptionPane.ERROR_MESSAGE);
-
+                CalcModel model = change(output);
+                List<RightTable> result = calculation.calcRightTable(model);
+                tableUtility.setValueToRightTable(table_calc, result);
             }
+        });
 
-        }
     }
 
     /**
-     * 右テーブル計算前の入力値チェックを行う
-     *
-     * @return true or false
+     * スクレイピング実行
      */
-    private boolean inputValidationIsOk() {
+    private NkOutput scraiping() {
+
+        if (inputValidateIsNG()) {
+            return null;
+        }
+
+        NkInput input = new NkInput();
+
+        String 開催地selection = group_raceField.getSelection().getActionCommand();
+        String 曜日selection = group_raceWeekday.getSelection().getActionCommand();
+
+        input.set選択開催地(NkInput.開催地.get(Integer.valueOf(開催地selection)));
+        input.set選択曜日(NkInput.曜日.get(Integer.valueOf(曜日selection)));
+        input.setラウンド(Integer.valueOf(input_roundNumber.getText()));
+
+        try {
+
+            NkOutput output = scraip.letsScraip(input);
+
+            label_course.setText(output.getCourse());
+            label_surface.setText(output.getSurface());
+            label_raceName.setText(output.getRaceTitle());
+            label_distance.setText(output.getDistance());
+            label_weather.setText(output.getWeather());
+            tableUtility.setJRARaceInfoToLeftTable(table_horse, output.getHorses());
+            return output;
+
+        } catch (Throwable e) {
+            logger.error("スクレイピング処理に失敗", e);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * スクレイプ前の入力チェック
+     * 
+     * @return
+     */
+    private boolean inputValidateIsNG() {
 
         MessageBuilder msgBuilder = new MessageBuilder();
 
-        if (Const.dataSheetMap == null || Const.dataSheetMap.isEmpty()) {
-            msgBuilder.addLine("データファイルが読み込まれていません。");
+        if (StringUtils.isBlank(input_roundNumber.getText())) {
+            msgBuilder.addLine("レース番号（ラウンド）が入力されていません。");
         }
 
-        if (StringUtils.isBlank(textFieldDistance.getText())) {
-            msgBuilder.addLine("レース距離は必須入力です。");
-        } else if (GetSheetData.getDistanceKey(textFieldDistance.getText()) == null) {
-            msgBuilder.addLine("入力されたレース距離は過去データに存在しません。");
-        }
-
-        if (jComboBoxUtility.isNoneSelected(comboBoxCourse)) {
-            msgBuilder.addLine("コースが未選択です。");
-        }
-
-        if (jComboBoxUtility.isNoneSelected(comboBoxSurface)) {
-            msgBuilder.addLine("地面が未選択です。");
-        }
-
-        if (jComboBoxUtility.isNoneSelected(comboBoxWeather)) {
-            msgBuilder.addLine("天気が未選択です。");
-        }
-
-        if (tableUtility.isEmptyLeftTable(tableWhere)) {
-            msgBuilder.addLine("左テーブルに値が何も入力されていません。");
+        if (!StringUtils.isNumeric(input_roundNumber.getText())) {
+            msgBuilder.addLine("レース番号（ラウンド）は数字で入力してください。");
         }
 
         if (!msgBuilder.isEmpty()) {
-            msgBuilder.showMessage(contentPane, "入力チェック", JOptionPane.INFORMATION_MESSAGE);
-            return false;
+            msgBuilder.showMessage(this, "入力チェック", JOptionPane.WARNING_MESSAGE);
+            return true;
         }
 
-        return true;
-
+        return false;
     }
 
     /**
      * システム終了処理
      */
     public void exit() {
-        ScraipingRaceFromJRA.close();
+        try {
+            scraip.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.exit(0);
     }
 
+    private void refresh() {
+
+        tableRefresh.refreshTableHasNo(table_horse);
+        tableRefresh.refreshTableNotContainNo(table_calc);
+        label_course.setText("");
+        label_surface.setText("");
+        label_raceName.setText("");
+        label_distance.setText("");
+        label_weather.setText("");
+
+        input_radioButton_tokyo.setSelected(true);
+        input_radioButton_sat.setSelected(true);
+    }
+
     /**
-     * スクレイピング画面を開くイベントを返す。
-     *
+     * スクレイプした情報（日本語）を<br>
+     * 解析用キー（数値）に変換する
+     * 
+     * @param output
      * @return
      */
-    private ActionListener getScrapingListener() {
-        return new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+    private CalcModel change(NkOutput output) {
 
-                // 取得レースの選択画面を表示
-                CollectJRARaceInfoPage popup = scraipSetter.showDialog(contentPane);
+        CalcModel model = new CalcModel();
+        // コース
+        {
+            Integer key = MatcherConst.courseMap
+                    .entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().equals(output.getCourse()))
+                    .findFirst()
+                    .get()
+                    .getKey();
+            model.setSelectedCourse(key);
+        }
 
-                // OKが押された場合だけ処理する
-                if (popup.getModel().getCloseAction() == ScraiperConst.Closeby.ok) {
+        // 地面
+        {
+            Integer key = MatcherConst.surfaceMap
+                    .entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().equals(output.getSurface().replaceAll("ダート", "ダ")))
+                    .findFirst()
+                    .get()
+                    .getKey();
+            model.setSelectedSurface(key);
+        }
 
-                    tableUtility.clearLeftTable(tableWhere);
-                    tableUtility.clearRightTable(tableResult);
+        // 天気
+        {
+            Integer key = MatcherConst.weatherMap
+                    .entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().equals(output.getWeather()))
+                    .findFirst()
+                    .get()
+                    .getKey();
+            model.setSelectedWeather(key);
+        }
 
-                    progressBar.setIndeterminate(true);
+        // 距離
+        model.setInputedDistance(Integer.valueOf(output.getDistance()));
 
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
+        // 馬テーブルの情報
+        List<LeftTable> tableList = tableUtility.conv2LeftTableModel(table_horse);
+        model.setTableList(tableList);
 
-                            scraipSetter.setScraipingResult(
-                                    popup.getModel(),
-                                    contentPane,
-                                    comboBoxCourse,
-                                    comboBoxSurface,
-                                    comboBoxWeather,
-                                    textFieldDistance,
-                                    tableWhere,
-                                    labelRaceTitle);
-
-                            progressBar.setIndeterminate(false);
-                        }
-                    });
-
-                    t.start();
-                }
-            }
-        };
+        return model;
     }
 }

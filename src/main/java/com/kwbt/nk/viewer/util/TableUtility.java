@@ -11,7 +11,8 @@ import javax.swing.table.TableModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kwbt.nk.scraiper.model.HorseModel;
+import com.kwbt.nk.scraip.HorseModel;
+import com.kwbt.nk.viewer.helper.TableRefresh;
 import com.kwbt.nk.viewer.model.ExpecationModel;
 import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
@@ -36,21 +37,7 @@ public class TableUtility {
 
     private final static DecimalFormat doubleFormat = new DecimalFormat("0.0");
 
-    /**
-     * 左テーブルの各セルに1つでも入力があるかどうかをチェック
-     *
-     * @param table
-     * @return
-     */
-    public boolean isEmptyLeftTable(JTable table) {
-        boolean returnValue = true;
-        for (LeftTable l : conv2LeftTableModel(table)) {
-            if (!l.isEmpty()) {
-                return false;
-            }
-        }
-        return returnValue;
-    }
+    private final TableRefresh reflesh = new TableRefresh();
 
     /**
      * 左テーブルに入力された値を、計算用のデータモデルへ詰める
@@ -160,41 +147,6 @@ public class TableUtility {
     }
 
     /**
-     * 左テーブルの値を全て削除する<br>
-     * ただし、No列は除く
-     *
-     * @param table
-     */
-    public void clearLeftTable(JTable table) {
-
-        int rowMax = table.getModel().getRowCount();
-        int colMax = table.getModel().getColumnCount();
-
-        for (int r = 0; r < rowMax; r++) {
-            for (int c = 1; c < colMax; c++) {
-                table.getModel().setValueAt(null, r, c);
-            }
-        }
-    }
-
-    /**
-     * 右テーブルの値を全てクリアする
-     *
-     * @param table
-     */
-    public void clearRightTable(JTable table) {
-
-        int rowMax = table.getModel().getRowCount();
-        int colMax = table.getModel().getColumnCount();
-
-        for (int r = 0; r < rowMax; r++) {
-            for (int c = 0; c < colMax; c++) {
-                table.getModel().setValueAt(null, r, c);
-            }
-        }
-    }
-
-    /**
      * 選択中のセルの値をクリアする
      *
      * @param table
@@ -217,7 +169,7 @@ public class TableUtility {
      */
     public void setJRARaceInfoToLeftTable(JTable leftTable, List<HorseModel> houseList) {
 
-        clearLeftTable(leftTable);
+        reflesh.refreshTableHasNo(leftTable);
 
         TableModel model = leftTable.getModel();
 

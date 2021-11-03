@@ -1,4 +1,4 @@
-package com.kwbt.nk.scraiper.model;
+package com.kwbt.nk.scraip;
 
 import java.util.ArrayList;
 import java.util.List;

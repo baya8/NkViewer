@@ -7,7 +7,7 @@ import javax.swing.JTable;
  *
  * @author baya
  */
-public class Refresh {
+public class TableRefresh {
 
     /**
      * No列を含むテーブルのセル値をクリア

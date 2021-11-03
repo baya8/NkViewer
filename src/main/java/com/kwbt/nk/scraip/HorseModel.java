@@ -1,4 +1,4 @@
-package com.kwbt.nk.scraiper.model;
+package com.kwbt.nk.scraip;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
