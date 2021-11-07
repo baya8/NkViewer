@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -25,6 +25,7 @@ import com.ui4j.api.browser.BrowserFactory;
 import com.ui4j.api.browser.Page;
 import com.ui4j.api.browser.PageConfiguration;
 import com.ui4j.api.dom.Document;
+import com.ui4j.api.dom.Element;
 import com.ui4j.api.event.DocumentLoadEvent;
 
 /**
@@ -114,7 +115,7 @@ public class NkScraip {
     /**
      * 
      */
-    public NkOutput letsScraip(NkInput input) {
+    public NkOutput letsScraip(NkInput input) throws InterruptedException {
 
         // https://www.jra.go.jp/
         // https://sp.jra.jp/
@@ -168,8 +169,6 @@ public class NkScraip {
                     .get()
                     .replaceAll(",", "");
 
-            System.out.println(distance);
-
             // レース距離
             {
                 Matcher matcher = distancePattern.matcher(distance);
@@ -205,14 +204,8 @@ public class NkScraip {
 
                 String cssWeightとか = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(3)";
 
-                //                System.out.println("★★★★★★★★★★★★★★★★★★★★★★★★");
-
-                //                if (count == 3) {
-                //                    break;
-                //                }
-
+                // 次の要素がとれなかったら、ループ終わり
                 if (!doc.query(String.format(cssWeightとか, count)).isPresent()) {
-                    System.out.println("count：" + count);
                     break;
                 }
 
@@ -263,9 +256,11 @@ public class NkScraip {
 
                     String cssDsl = ".basic > tbody:nth-child(3) > tr:nth-child(%d) > td:nth-child(5) > div:nth-child(1) > div:nth-child(1)";
 
-                    if (doc.query(String.format(cssDsl, count)).isPresent()) {
+                    Optional<Element> dslElement = doc.query(String.format(cssDsl, count));
 
-                        String dslStr = doc.query(String.format(cssDsl, count))
+                    if (dslElement.isPresent()) {
+
+                        String dslStr = dslElement
                                 .get()
                                 .getText()
                                 .get();
@@ -283,7 +278,10 @@ public class NkScraip {
                     }
 
                     else {
+
+                        // 前走なし
                         model.setDsl(0);
+                        model.setFirstRun(true);
                     }
 
                 }
@@ -294,22 +292,14 @@ public class NkScraip {
             }
 
             return output;
-
-        } catch (NoSuchElementException no) {
-
-            // ボタン配置が変わっている可能性
-            throw no;
-
-        } catch (InterruptedException e) {
-
-            // その他例外
-
-            e.printStackTrace();
         }
-
-        throw new RuntimeException();
     }
 
+    /**
+     * 
+     * @param str
+     * @return
+     */
     private String 整形(String str) {
 
         return str
@@ -356,7 +346,7 @@ public class NkScraip {
         return selector.stream()
                 .filter(e -> e.equals(input))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("検索条件に合致する要素が存在しません。"))
+                .get()
                 .getCss();
     }
 

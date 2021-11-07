@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
 import com.kwbt.nk.common.JsonData;
 import com.kwbt.nk.common.MatcherConst;
 import com.kwbt.nk.common.Range;
@@ -45,11 +45,18 @@ public class Calculation {
         // 右テーブルの値
         final List<RightTable> returnValue = new ArrayList<>(leftTableList.size());
 
+        // レース距離から、該当する過去データのみに絞る
         final List<JsonData> dataSheet = getSheetData.getSheetPack(model.getInputedDistance());
 
+        // コース、地面、天気は共通なのでここでフィルター
         final List<Result> resultList = dataSheet
                 .parallelStream()
                 .map(e -> e.getResultModel())
+                .filter(r -> {
+                    return r.course == model.getSelectedCourse()
+                            && r.surface == model.getSelectedSurface()
+                            && r.weather == model.getSelectedWeather();
+                })
                 .collect(Collectors.toList());
 
         for (LeftTable leftTable : leftTableList) {
@@ -69,80 +76,102 @@ public class Calculation {
 
     private List<Result> filterResultList(List<Result> resultList, LeftTable l, CalcModel model) {
 
-        final List<Result> subList = new ArrayList<>(resultList.size());
-
-        // 左上の入力値でフィルター
-        String courseSelection = Const.courseArray[model.getSelectedCourse()];
-        String surfaceSelection = Const.surfaceArray[model.getSelectedSurface()];
-        String weatherSelection = Const.weatherArray[model.getSelectedWeather()];
-
-        final List<Result> matchedList = resultList
-                .parallelStream()
-                .filter(r -> {
-                    String courseStr = MatcherConst.courseMap.get(r.course);
-                    String surfaceStr = MatcherConst.surfaceMap.get(r.surface);
-                    String weatherStr = MatcherConst.weatherMap.get(r.weather);
-                    return Objects.equal(courseSelection, courseStr)
-                            && Objects.equal(surfaceSelection, surfaceStr)
-                            && Objects.equal(weatherSelection, weatherStr);
-                })
-                .collect(Collectors.toList());
-
-        if (matchedList.isEmpty()) {
-            return matchedList;
+        if (resultList.isEmpty()) {
+            return resultList;
         }
+
+        final List<Result> matchedList = new ArrayList<>(resultList);
+
+        //        final List<Result> subList = new ArrayList<>(matchedList.size());
 
         logger.debug(String.format("filter left top conf - size: %d", matchedList.size()));
 
-        // weightでフィルター
-        if (l.getHweight() != null) {
-            matchedList.forEach(r -> {
-                Range<Double> hweightRange = MatcherConst.hweightMap.get(r.hweight);
-                if (rangeContain(hweightRange, l.getHweight())) {
-                    subList.add(r);
-                }
-            });
-            pass(subList, matchedList);
-        }
-        logger.debug(String.format("filter weight - size: %d", matchedList.size()));
+        return matchedList
+                .parallelStream()
+                .filter(e -> {
+                    if (Objects.nonNull(l.getHweight())) {
+                        Range<Double> hweightRange = MatcherConst.hweightMap.get(e.hweight);
+                        return rangeContain(hweightRange, l.getHweight());
+                    }
+                    return true;
+                })
+                .filter(e -> {
+                    if (Objects.nonNull(l.getDhweight())) {
+                        Range<Double> dhweightRange = MatcherConst.dhweightMap.get(e.dhweight);
+                        return rangeContain(dhweightRange, l.getDhweight());
+                    }
+                    return true;
+                })
+                //                .filter(e -> {
+                //                    if (Objects.nonNull(l.getDsl())) {
+                //                        Range<Double> dslRange = MatcherConst.dslMap.get(e.dsl);
+                //                        return rangeContain(dslRange, l.getDsl());
+                //                    }
+                //                    return true;
+                //                })
+                .filter(e -> {
+                    if (Objects.nonNull(l.getOdds())) {
+                        Range<Double> oddsRange = MatcherConst.oddsMap.get(e.odds);
+                        return rangeContain(oddsRange, l.getOdds());
+                    }
+                    return true;
 
-        // dhweightでフィルター
-        if (l.getDhweight() != null) {
-            matchedList.forEach(r -> {
-                Range<Double> dhweightRange = MatcherConst.dhweightMap.get(r.dhweight);
-                if (rangeContain(dhweightRange, l.getDhweight())) {
-                    subList.add(r);
-                }
-            });
-            pass(subList, matchedList);
-        }
-        logger.debug(String.format("filter dhweight - size: %d", matchedList.size()));
+                })
+                .collect(Collectors.toList());
 
-        // dslでフィルター
-        if (l.getDsl() != null) {
-            matchedList.forEach(r -> {
-                Range<Double> dslRange = MatcherConst.dslMap.get(r.dsl);
-                if (rangeContain(dslRange, l.getDsl())) {
-                    subList.add(r);
-                }
-            });
-            pass(subList, matchedList);
-        }
-        logger.debug(String.format("filter dsl - size: %d", matchedList.size()));
-
-        // oddsでフィルター
-        if (l.getOdds() != null) {
-            matchedList.forEach(r -> {
-                Range<Double> oddsRange = MatcherConst.oddsMap.get(r.odds);
-                if (rangeContain(oddsRange, l.getOdds())) {
-                    subList.add(r);
-                }
-            });
-            pass(subList, matchedList);
-        }
-        logger.debug(String.format("filter odds - size: %d", matchedList.size()));
-
-        return matchedList;
+        //        // weightでフィルター
+        //        if (l.getHweight() != null) {
+        //            matchedList.forEach(r -> {
+        //                Range<Double> hweightRange = MatcherConst.hweightMap.get(r.hweight);
+        //                if (rangeContain(hweightRange, l.getHweight())) {
+        //                    subList.add(r);
+        //                }
+        //            });
+        //            pass(subList, matchedList);
+        //        }
+        //
+        //        logger.debug(String.format("filter weight - size: %d", matchedList.size()));
+        //
+        //        // dhweightでフィルター
+        //        if (l.getDhweight() != null) {
+        //            matchedList.forEach(r -> {
+        //                Range<Double> dhweightRange = MatcherConst.dhweightMap.get(r.dhweight);
+        //                if (rangeContain(dhweightRange, l.getDhweight())) {
+        //                    subList.add(r);
+        //                }
+        //            });
+        //            pass(subList, matchedList);
+        //        }
+        //
+        //        logger.debug(String.format("filter dhweight - size: %d", matchedList.size()));
+        //
+        //        // dslでフィルター
+        //        if (l.getDsl() != null) {
+        //            matchedList.forEach(r -> {
+        //                Range<Double> dslRange = MatcherConst.dslMap.get(r.dsl);
+        //                if (rangeContain(dslRange, l.getDsl())) {
+        //                    subList.add(r);
+        //                }
+        //            });
+        //            pass(subList, matchedList);
+        //        }
+        //
+        //        logger.debug(String.format("filter dsl - size: %d", matchedList.size()));
+        //
+        //        // oddsでフィルター
+        //        if (l.getOdds() != null) {
+        //            matchedList.forEach(r -> {
+        //                Range<Double> oddsRange = MatcherConst.oddsMap.get(r.odds);
+        //                if (rangeContain(oddsRange, l.getOdds())) {
+        //                    subList.add(r);
+        //                }
+        //            });
+        //            pass(subList, matchedList);
+        //        }
+        //
+        //        logger.debug(String.format("filter odds - size: %d", matchedList.size()));
+        //
+        //        return matchedList;
     }
 
     private boolean rangeContain(Range<Double> r, Double value) {

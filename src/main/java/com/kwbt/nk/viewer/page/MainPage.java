@@ -10,10 +10,13 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -24,14 +27,12 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +97,7 @@ public class MainPage extends JFrame {
     private final JButton button_refresh = new JButton("リフレッシュ");
     private final JPanel panel_1 = new JPanel();
     private final JTable table = new JTable();
-    private final JTextField input_roundNumber;
+    private final JComboBox<Integer> input_roundNumber = new JComboBox<>();
 
     /**
      * その他部品
@@ -246,8 +247,12 @@ public class MainPage extends JFrame {
                                 { "19", null, null, null, null },
                                 { "20", null, null, null, null },
                         },
-                        new String[] { "No", "weight", "dhweight", "dsl", "odds" }) {
-                    boolean[] columnEditables = new boolean[] { true, false, true, true, true };
+                        new String[] {
+                                "No", "weight", "dhweight", "dsl", "odds"
+                        }) {
+                    boolean[] columnEditables = new boolean[] {
+                            true, false, false, false, false
+                    };
 
                     public boolean isCellEditable(int row, int column) {
                         return columnEditables[column];
@@ -287,8 +292,12 @@ public class MainPage extends JFrame {
                                 { null, null, null, null, null },
                                 { null, null, null, null, null },
                         },
-                        new String[] { "\u56DE\u53CE\u7387(avg)", "\u52DD\u7387(%)", "\u7DCF\u6570", "\u8CFC\u5165\u6570", "\u30DA\u30A4\u30AA\u30D5" }) {
-                    boolean[] columnEditables = new boolean[] { false, false, false, false, false };
+                        new String[] {
+                                "\u56DE\u53CE\u7387(avg)", "\u52DD\u7387(%)", "\u7DCF\u6570", "\u8CFC\u5165\u6570", "\u30DA\u30A4\u30AA\u30D5"
+                        }) {
+                    boolean[] columnEditables = new boolean[] {
+                            false, false, false, false, false
+                    };
 
                     public boolean isCellEditable(int row, int column) {
                         return columnEditables[column];
@@ -382,14 +391,17 @@ public class MainPage extends JFrame {
         group_round.setBounds(525, 20, 84, 53);
         contentPane.add(group_round);
 
-        input_roundNumber = new JTextField();
-        input_roundNumber.setBounds(12, 20, 44, 19);
-        group_round.add(input_roundNumber);
-        input_roundNumber.setColumns(10);
-
         JLabel labelStr01_1_1_1 = new JLabel("R");
         labelStr01_1_1_1.setBounds(60, 23, 17, 13);
         group_round.add(labelStr01_1_1_1);
+
+        input_roundNumber.setMaximumRowCount(16);
+        input_roundNumber.setBounds(11, 19, 45, 21);
+        group_round.add(input_roundNumber);
+        input_roundNumber.setModel(new DefaultComboBoxModel<Integer>(new Integer[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }));
+
+        tableUtility.tableRendererRight(table_horse);
+        tableUtility.tableRendererRight(table_calc);
 
         setTitle("NkViewer");
 
@@ -445,14 +457,14 @@ public class MainPage extends JFrame {
                 tableRefresh.refreshTableHasNo(table_horse);
                 tableRefresh.refreshTableNotContainNo(table_calc);
 
+                // スクレイピング
                 NkOutput output = scraiping();
                 if (Objects.isNull(output)) {
                     return;
                 }
 
-                CalcModel model = change(output);
-                List<RightTable> result = calculation.calcRightTable(model);
-                tableUtility.setValueToRightTable(table_calc, result);
+                // 計算実施
+                change(output);
             }
         });
 
@@ -463,10 +475,6 @@ public class MainPage extends JFrame {
      */
     private NkOutput scraiping() {
 
-        if (inputValidateIsNG()) {
-            return null;
-        }
-
         NkInput input = new NkInput();
 
         String 開催地selection = group_raceField.getSelection().getActionCommand();
@@ -474,7 +482,9 @@ public class MainPage extends JFrame {
 
         input.set選択開催地(NkInput.開催地.get(Integer.valueOf(開催地selection)));
         input.set選択曜日(NkInput.曜日.get(Integer.valueOf(曜日selection)));
-        input.setラウンド(Integer.valueOf(input_roundNumber.getText()));
+
+        // TODO
+        input.setラウンド(Integer.valueOf(input_roundNumber.getSelectedIndex() + 1));
 
         try {
 
@@ -486,39 +496,31 @@ public class MainPage extends JFrame {
             label_distance.setText(output.getDistance());
             label_weather.setText(output.getWeather());
             tableUtility.setJRARaceInfoToLeftTable(table_horse, output.getHorses());
+
             return output;
 
-        } catch (Throwable e) {
-            logger.error("スクレイピング処理に失敗", e);
+        } catch (NoSuchElementException e) {
+
             e.printStackTrace();
+            logger.error("スクレイピング処理に失敗", e);
+            new MessageBuilder()
+                    .addLine("スクレイピングに失敗しました。")
+                    .addLine("以下の理由が考えられます。")
+                    .addLine("1．サイトの掲載場所が変わっている")
+                    .addLine("2．次週レース前（水曜、木曜）は空ページになるため、スクレイピング不可")
+                    .showMessage(this, "警告", JOptionPane.WARNING_MESSAGE);
+
+        } catch (Throwable e) {
+
+            e.printStackTrace();
+            logger.error("スクレイピング処理に失敗", e);
+            new MessageBuilder()
+                    .addLine("スクレイピングが原因不明の理由により失敗しました。")
+                    .addLine("ログファイルを管理者に送付してください。")
+                    .showMessage(this, "エラー", JOptionPane.ERROR_MESSAGE);
         }
 
         return null;
-    }
-
-    /**
-     * スクレイプ前の入力チェック
-     * 
-     * @return
-     */
-    private boolean inputValidateIsNG() {
-
-        MessageBuilder msgBuilder = new MessageBuilder();
-
-        if (StringUtils.isBlank(input_roundNumber.getText())) {
-            msgBuilder.addLine("レース番号（ラウンド）が入力されていません。");
-        }
-
-        if (!StringUtils.isNumeric(input_roundNumber.getText())) {
-            msgBuilder.addLine("レース番号（ラウンド）は数字で入力してください。");
-        }
-
-        if (!msgBuilder.isEmpty()) {
-            msgBuilder.showMessage(this, "入力チェック", JOptionPane.WARNING_MESSAGE);
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -552,11 +554,11 @@ public class MainPage extends JFrame {
      * 解析用キー（数値）に変換する
      * 
      * @param output
-     * @return
      */
-    private CalcModel change(NkOutput output) {
+    private void change(NkOutput output) {
 
         CalcModel model = new CalcModel();
+
         // コース
         {
             Integer key = MatcherConst.courseMap
@@ -600,6 +602,18 @@ public class MainPage extends JFrame {
         List<LeftTable> tableList = tableUtility.conv2LeftTableModel(table_horse);
         model.setTableList(tableList);
 
-        return model;
+        try {
+
+            List<RightTable> result = calculation.calcRightTable(model);
+            tableUtility.setValueToRightTable(table_calc, result);
+
+        } catch (Exception e) {
+
+            logger.error("計算処理が失敗しました。", e);
+            new MessageBuilder()
+                    .addLine("計算処理が失敗しました。")
+                    .addLine("ログファイルを管理者に送付してください。")
+                    .showMessage(this, "エラー", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

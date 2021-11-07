@@ -2,10 +2,14 @@ package com.kwbt.nk.viewer.util;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
 import org.slf4j.Logger;
@@ -38,6 +42,12 @@ public class TableUtility {
     private final static DecimalFormat doubleFormat = new DecimalFormat("0.0");
 
     private final TableRefresh reflesh = new TableRefresh();
+
+    private final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+        {
+            this.setHorizontalAlignment(SwingConstants.RIGHT);
+        }
+    };
 
     /**
      * 左テーブルに入力された値を、計算用のデータモデルへ詰める
@@ -181,6 +191,20 @@ public class TableUtility {
             model.setValueAt(e.getDhweight(), i, leftTableColumnDhweight);
             model.setValueAt(e.getDsl(), i, leftTableColumnDsl);
             model.setValueAt(e.getOdds(), i, leftTableColumnOdds);
+        }
+    }
+
+    /**
+     * 引数に指定したテーブルのセルを、右揃えにする
+     * 
+     * @param table
+     */
+    public void tableRendererRight(JTable table) {
+
+        Enumeration<TableColumn> asdf = table.getColumnModel().getColumns();
+        while (asdf.hasMoreElements()) {
+            TableColumn col = asdf.nextElement();
+            col.setCellRenderer(renderer);
         }
     }
 }

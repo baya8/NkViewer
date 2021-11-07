@@ -16,4 +16,4 @@ bin
 logs
 
 # 固有
-datasource.json
+datasource.json*

@@ -13,22 +13,20 @@ public class NkScraipTest {
         NkInput input = new NkInput();
         input.set選択曜日(NkInput.曜日.土曜);
         input.set選択開催地(NkInput.開催地.東京);
-        input.setラウンド(11);
+        input.setラウンド(7);
 
         // テスト準備
 
-        NkOutput output = null;
-
         // テスト実行
-        output = target.letsScraip(input);
+        NkOutput output = target.letsScraip(input);
 
         // 評価
 
-        System.out.println(output.getRaceTitle());
-        System.out.println(output.getDistance());
-        System.out.println(output.getSurface());
+        //        System.out.println(output.getRaceTitle());
+        //        System.out.println(output.getDistance());
+        //        System.out.println(output.getSurface());
 
-        output.getHorses().forEach(System.out::println);
+        //        output.getHorses().forEach(System.out::println);
     }
 
 }
