@@ -40,7 +40,9 @@ public class NkScraip {
     private final static PageConfiguration conf = new PageConfiguration()
             .setUserAgent("Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:43.0) Gecko/20100101 Firefox/43.0");
 
-    private final String 出馬表 = "#quick_menu > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)";
+    private final static String 出馬表 = "#quick_menu > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)";
+
+    private final static String css天候 = ".weather > span:nth-child(1) > span:nth-child(2)";
 
     private final static String css土曜東京 = "#main > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)";
     private final static String css土曜阪神 = "#main > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > a:nth-child(1)";
@@ -66,7 +68,7 @@ public class NkScraip {
     private final static String sp15R = "#race_list > tbody:nth-child(3) > tr:nth-child(15) > td:nth-child(7) > a:nth-child(1)";
     private final static String sp16R = "#race_list > tbody:nth-child(3) > tr:nth-child(16) > td:nth-child(7) > a:nth-child(1)";
 
-    private final static Set<Selector> selector = new HashSet<>();
+    private final static Set<Selector> daySelector = new HashSet<>();
     private final static Map<Integer, String> roundMap = new HashMap<>();
 
     private final static Pattern distancePattern = Pattern.compile("[0-9]+メートル");
@@ -81,12 +83,12 @@ public class NkScraip {
         // よくわからんけど、マニュアルからコピペ
         System.setProperty("ui4j", "true");
 
-        selector.add(new Selector(曜日.土曜, 開催地.東京, css土曜東京));
-        selector.add(new Selector(曜日.土曜, 開催地.阪神, css土曜阪神));
-        selector.add(new Selector(曜日.土曜, 開催地.新潟, css土曜新潟));
-        selector.add(new Selector(曜日.日曜, 開催地.東京, css日曜東京));
-        selector.add(new Selector(曜日.日曜, 開催地.阪神, css日曜阪神));
-        selector.add(new Selector(曜日.日曜, 開催地.新潟, css日曜新潟));
+        daySelector.add(new Selector(曜日.土曜, 開催地.東京, css土曜東京));
+        daySelector.add(new Selector(曜日.土曜, 開催地.阪神, css土曜阪神));
+        daySelector.add(new Selector(曜日.土曜, 開催地.新潟, css土曜新潟));
+        daySelector.add(new Selector(曜日.日曜, 開催地.東京, css日曜東京));
+        daySelector.add(new Selector(曜日.日曜, 開催地.阪神, css日曜阪神));
+        daySelector.add(new Selector(曜日.日曜, 開催地.新潟, css日曜新潟));
 
         roundMap.put(1, sp1R);
         roundMap.put(2, sp2R);
@@ -126,6 +128,8 @@ public class NkScraip {
 
             Document doc = page.getDocument();
 
+            NkOutput output = new NkOutput();
+
             // -------------------------------
             // ページ遷移
 
@@ -141,6 +145,26 @@ public class NkScraip {
 
             Thread.sleep(200);
 
+            // 天気
+            {
+                Optional<Element> weather = doc.query(css天候);
+                if (weather.isPresent()) {
+
+                    String weatherStr = weather.get()
+                            .getText()
+                            .get();
+                    output.setWeather(weatherStr);
+                }
+
+                else {
+
+                    // 天気の情報が取れないときは
+                    // レース終了から時間が経っているので
+                    // 晴れにしておく
+                    output.setWeather("晴");
+                }
+            }
+
             doc.query(cssラウンド(input))
                     .get()
                     .click();
@@ -149,11 +173,6 @@ public class NkScraip {
 
             // -------------------------------
             // 情報取得
-
-            NkOutput output = new NkOutput();
-
-            // 天気は晴れ一択でいく
-            output.setWeather("晴");
 
             // レースタイトル
             String title = 整形(doc.query(".race_name")
@@ -282,6 +301,9 @@ public class NkScraip {
                         // 前走なし
                         model.setDsl(0);
                         model.setFirstRun(true);
+
+                        // 前走なしは、馬体重変動もないので、0をセット
+                        model.setDhweight(0);
                     }
 
                 }
@@ -343,7 +365,7 @@ public class NkScraip {
      */
     private String css曜日と開催地(NkInput input) {
 
-        return selector.stream()
+        return daySelector.stream()
                 .filter(e -> e.equals(input))
                 .findFirst()
                 .get()

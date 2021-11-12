@@ -2,7 +2,7 @@ package com.kwbt.nk.viewer.core;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -14,9 +14,9 @@ import com.kwbt.nk.common.JsonData;
 import com.kwbt.nk.common.MatcherConst;
 import com.kwbt.nk.common.Range;
 import com.kwbt.nk.common.Result;
+import com.kwbt.nk.scraip.HorseModel;
+import com.kwbt.nk.scraip.NkOutput;
 import com.kwbt.nk.viewer.constant.Const;
-import com.kwbt.nk.viewer.model.CalcModel;
-import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
 import com.kwbt.nk.viewer.util.GetSheetData;
 
@@ -27,165 +27,108 @@ import com.kwbt.nk.viewer.util.GetSheetData;
  */
 public class Calculation {
 
+    @SuppressWarnings("unused")
     private final static Logger logger = LoggerFactory.getLogger(Calculation.class);
 
     private final GetSheetData getSheetData = new GetSheetData();
 
     /**
-     * 左テーブルの入力値から、右テーブルの値を算出
-     *
-     * @param model
+     * 
+     * @param output
      * @return
      */
-    public List<RightTable> calcRightTable(CalcModel model) {
+    public List<RightTable> calcRight(NkOutput output) {
 
-        // 左テーブルの値
-        final List<LeftTable> leftTableList = model.getTableList();
-
-        // 右テーブルの値
-        final List<RightTable> returnValue = new ArrayList<>(leftTableList.size());
+        final List<RightTable> rightTable = new LinkedList<>();
 
         // レース距離から、該当する過去データのみに絞る
-        final List<JsonData> dataSheet = getSheetData.getSheetPack(model.getInputedDistance());
+        final List<JsonData> dataSheet = getSheetData.getSheetPack(output.getDistanceInt());
 
         // コース、地面、天気は共通なのでここでフィルター
-        final List<Result> resultList = dataSheet
+        final List<Result> filtered = dataSheet
                 .parallelStream()
                 .map(e -> e.getResultModel())
                 .filter(r -> {
-                    return r.course == model.getSelectedCourse()
-                            && r.surface == model.getSelectedSurface()
-                            && r.weather == model.getSelectedWeather();
+                    return r.course == output.getCourseInt()
+                            && r.surface == output.getSurfaceInt()
+                            && r.weather == output.getWeatherInt();
                 })
                 .collect(Collectors.toList());
 
-        for (LeftTable leftTable : leftTableList) {
+        // 馬Noをそろえるため、拡張for文は使わない
+        for (int index = 0; index < output.getHorses().size(); index++) {
 
-            logger.info(leftTable.toString());
-
-            List<Result> filteredResultList = filterResultList(resultList, leftTable, model);
-
-            RightTable rightTable = calcValue(filteredResultList);
-            rightTable.setNo(leftTable.getNo());
-
-            returnValue.add(rightTable);
+            HorseModel horse = output.getHorses().get(index);
+            List<Result> machedList = findMatchResultModel(filtered, horse);
+            RightTable rightRow = calcValue(machedList);
+            rightRow.setNo(index + 1);
+            rightTable.add(rightRow);
         }
 
-        return returnValue;
+        return rightTable;
     }
 
-    private List<Result> filterResultList(List<Result> resultList, LeftTable l, CalcModel model) {
+    /**
+     * 左テーブルの入力値から、右テーブルの値を算出
+     * 
+     * @param filtered
+     * @param horse
+     * @return
+     */
+    private List<Result> findMatchResultModel(List<Result> filtered, HorseModel horse) {
 
-        if (resultList.isEmpty()) {
-            return resultList;
+        if (filtered.isEmpty()) {
+            return filtered;
         }
 
-        final List<Result> matchedList = new ArrayList<>(resultList);
-
-        //        final List<Result> subList = new ArrayList<>(matchedList.size());
-
-        logger.debug(String.format("filter left top conf - size: %d", matchedList.size()));
-
-        return matchedList
+        return filtered
                 .parallelStream()
                 .filter(e -> {
-                    if (Objects.nonNull(l.getHweight())) {
+                    if (Objects.nonNull(horse.getHweight())) {
                         Range<Double> hweightRange = MatcherConst.hweightMap.get(e.hweight);
-                        return rangeContain(hweightRange, l.getHweight());
+                        return rangeContain(hweightRange, horse.getHweight());
                     }
                     return true;
                 })
                 .filter(e -> {
-                    if (Objects.nonNull(l.getDhweight())) {
+
+                    // 初走の時は、フィルターしない
+                    if (Objects.nonNull(horse.getDhweight())
+                            && !horse.isFirstRun()) {
                         Range<Double> dhweightRange = MatcherConst.dhweightMap.get(e.dhweight);
-                        return rangeContain(dhweightRange, l.getDhweight());
+                        return rangeContain(dhweightRange, horse.getDhweight());
                     }
                     return true;
                 })
-                //                .filter(e -> {
-                //                    if (Objects.nonNull(l.getDsl())) {
-                //                        Range<Double> dslRange = MatcherConst.dslMap.get(e.dsl);
-                //                        return rangeContain(dslRange, l.getDsl());
-                //                    }
-                //                    return true;
-                //                })
                 .filter(e -> {
-                    if (Objects.nonNull(l.getOdds())) {
+
+                    // 初走の時は、フィルターしない
+                    if (Objects.nonNull(horse.getDsl())
+                            && !horse.isFirstRun()) {
+                        Range<Double> dslRange = MatcherConst.dslMap.get(e.dsl);
+                        return rangeContain(dslRange, horse.getDsl());
+                    }
+                    return true;
+                })
+                .filter(e -> {
+                    if (Objects.nonNull(horse.getOdds())) {
                         Range<Double> oddsRange = MatcherConst.oddsMap.get(e.odds);
-                        return rangeContain(oddsRange, l.getOdds());
+                        return rangeContain(oddsRange, horse.getOdds());
                     }
                     return true;
 
                 })
                 .collect(Collectors.toList());
-
-        //        // weightでフィルター
-        //        if (l.getHweight() != null) {
-        //            matchedList.forEach(r -> {
-        //                Range<Double> hweightRange = MatcherConst.hweightMap.get(r.hweight);
-        //                if (rangeContain(hweightRange, l.getHweight())) {
-        //                    subList.add(r);
-        //                }
-        //            });
-        //            pass(subList, matchedList);
-        //        }
-        //
-        //        logger.debug(String.format("filter weight - size: %d", matchedList.size()));
-        //
-        //        // dhweightでフィルター
-        //        if (l.getDhweight() != null) {
-        //            matchedList.forEach(r -> {
-        //                Range<Double> dhweightRange = MatcherConst.dhweightMap.get(r.dhweight);
-        //                if (rangeContain(dhweightRange, l.getDhweight())) {
-        //                    subList.add(r);
-        //                }
-        //            });
-        //            pass(subList, matchedList);
-        //        }
-        //
-        //        logger.debug(String.format("filter dhweight - size: %d", matchedList.size()));
-        //
-        //        // dslでフィルター
-        //        if (l.getDsl() != null) {
-        //            matchedList.forEach(r -> {
-        //                Range<Double> dslRange = MatcherConst.dslMap.get(r.dsl);
-        //                if (rangeContain(dslRange, l.getDsl())) {
-        //                    subList.add(r);
-        //                }
-        //            });
-        //            pass(subList, matchedList);
-        //        }
-        //
-        //        logger.debug(String.format("filter dsl - size: %d", matchedList.size()));
-        //
-        //        // oddsでフィルター
-        //        if (l.getOdds() != null) {
-        //            matchedList.forEach(r -> {
-        //                Range<Double> oddsRange = MatcherConst.oddsMap.get(r.odds);
-        //                if (rangeContain(oddsRange, l.getOdds())) {
-        //                    subList.add(r);
-        //                }
-        //            });
-        //            pass(subList, matchedList);
-        //        }
-        //
-        //        logger.debug(String.format("filter odds - size: %d", matchedList.size()));
-        //
-        //        return matchedList;
     }
 
     private boolean rangeContain(Range<Double> r, Double value) {
-        return (r == null && value == null) || (r != null && value != null && r.isContain(value));
+        return (r == null && value == null)
+                || (r != null && value != null && r.isContain(value));
     }
 
     private boolean rangeContain(Range<Double> r, Integer value) {
-        return (r == null && value == null) || (r != null && value != null && r.isContain(Double.valueOf(value)));
-    }
-
-    private void pass(List<Result> from, List<Result> to) {
-        to.clear();
-        to.addAll(from);
-        from.clear();
+        return (r == null && value == null)
+                || (r != null && value != null && r.isContain(Double.valueOf(value)));
     }
 
     /**
@@ -217,9 +160,14 @@ public class Calculation {
             payyoffAvg = payyoffAvg.divide(bunbo, Const.decimalDivideRoundNum, RoundingMode.HALF_UP);
         }
 
+        Double winper = countSum * 1.0 / boughtBakenNum * 100.0;
+        if (winper.isNaN()) {
+            winper = 0.0;
+        }
+
         return new RightTable(
                 kaisyu.doubleValue(),
-                (countSum * 1.0 / boughtBakenNum * 100.0),
+                winper,
                 countSum,
                 boughtBakenNum,
                 payyoffAvg.doubleValue());

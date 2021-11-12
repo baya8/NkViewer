@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kwbt.nk.scraip.HorseModel;
 import com.kwbt.nk.viewer.helper.TableRefresh;
-import com.kwbt.nk.viewer.model.ExpecationModel;
+import com.kwbt.nk.viewer.model.ExpectModel;
 import com.kwbt.nk.viewer.model.LeftTable;
 import com.kwbt.nk.viewer.model.RightTable;
 
@@ -37,7 +37,7 @@ public class TableUtility {
     private final static Integer leftTableColumnOdds = 4;
 
     private final static int rightTableStartCellValue = 0;
-    private final static int expecationTableStartCellValue = 1;
+    private final static int expecationTableStartCellValue = 0;
 
     private final static DecimalFormat doubleFormat = new DecimalFormat("0.0");
 
@@ -114,7 +114,7 @@ public class TableUtility {
      * @param expectationTable
      * @param expectationList
      */
-    public void setValueToExpectationTable(JTable expectationTable, List<ExpecationModel> expectationList) {
+    public void setValueToExpectationTable(JTable expectationTable, List<ExpectModel> expectationList) {
 
         TableModel model = expectationTable.getModel();
 
@@ -122,7 +122,7 @@ public class TableUtility {
 
             AtomicInteger index = new AtomicInteger(expecationTableStartCellValue);
 
-            ExpecationModel expecationEntity = expectationList.get(i);
+            ExpectModel expecationEntity = expectationList.get(i);
             model.setValueAt(expecationEntity.getNo(), i, index.getAndIncrement());
             model.setValueAt(formatDoubleValue(expecationEntity.getWinper()), i, index.getAndIncrement());
             model.setValueAt(formatDoubleValue(expecationEntity.getExpectation()), i, index.get());
@@ -135,7 +135,7 @@ public class TableUtility {
      * @param obj
      * @return
      */
-    private Object formatDoubleValue(Object obj) {
+    private Number formatDoubleValue(Number obj) {
 
         logger.info(" try format {}", obj);
 

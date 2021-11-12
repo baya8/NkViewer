@@ -24,6 +24,11 @@ public class DataSourceReader {
 
     private final static Logger logger = LoggerFactory.getLogger(DataSourceReader.class);
 
+    /**
+     * 
+     * @param f
+     * @return
+     */
     public static Map<Integer, List<JsonData>> readJsonFile(File f) {
 
         try (FileReader fs = new FileReader(f);
